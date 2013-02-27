@@ -27,6 +27,7 @@
 /******************************************************************************/
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
+int initPrg( int argc, const char* argv[] ) ;
 
 /******************************************************************************/
 /*                                                                            */
@@ -39,13 +40,20 @@ int main(int argc, const char* argv[] )
 {
   int sysRc ;
 
+#if(0)
   sysRc = handleCmdLn( argc, argv ) ;
   if( sysRc != 0 ) goto _door ;
 
+  const char *logName = getStrAttr( "log" ) ;
+  
+  if( logName == NULL ) ;
+
   initLogging( "var/log/main.log", INF ) ;
   logger( LSTD_PRG_START, basename( (char*) argv[0] ) ) ;
-  
+#endif
 
+  sysRc = initPrg( argc, argv ) ;
+  if( sysRc != 0 ) goto _door ;
 
 _door :
 
@@ -60,3 +68,21 @@ _door :
 /*                                                                            */
 /******************************************************************************/
 
+int initPrg( int argc, const char* argv[] )
+{
+  int sysRc ;
+
+  sysRc = handleCmdLn( argc, argv ) ;
+  if( sysRc != 0 ) goto _door ;
+
+  const char *logName = getStrAttr( "log" ) ;
+  if( logName == NULL ) ;
+
+  sysRc = initLogging( "var/log/main.log", INF ) ;
+  if( sysRc != 0 ) goto _door ;
+
+  logger( LSTD_PRG_START, basename( (char*) argv[0] ) ) ;
+  
+_door :
+  return sysRc ;
+}
