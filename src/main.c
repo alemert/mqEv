@@ -9,6 +9,7 @@
 // ---------------------------------------------------------
 // system
 // ---------------------------------------------------------
+#include <libgen.h>
 
 // ---------------------------------------------------------
 // own 
@@ -40,6 +41,11 @@ int main(int argc, const char* argv[] )
 
   sysRc = handleCmdLn( argc, argv ) ;
   if( sysRc != 0 ) goto _door ;
+
+  initLogging( "var/log/main.log", INF ) ;
+  logger( LSTD_PRG_START, basename( (char*) argv[0] ) ) ;
+  
+
 
 _door :
 
