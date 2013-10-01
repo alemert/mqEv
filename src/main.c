@@ -1,5 +1,14 @@
 /******************************************************************************/
-/* change title on for new project                                            */
+/*                             M Q   E V E N T S                              */
+/*                                                            */
+/*  description:                                  */
+/*    start program :                                */
+/*      from cmd line                          */
+/*      triggered from qmgr                      */
+/*    read (browse) mq events from some event queue            */
+/*    analyse the event                                  */
+/*    show event on the console or send it to the xymon            */
+/*    rotate monitoring                              */
 /******************************************************************************/
 
 /******************************************************************************/
@@ -40,20 +49,17 @@ int main(int argc, const char* argv[] )
 {
   int sysRc ;
 
-#if(0)
-  sysRc = handleCmdLn( argc, argv ) ;
-  if( sysRc != 0 ) goto _door ;
+  // -------------------------------------------------------
+  // init program 
+  // -------------------------------------------------------
+  sysRc = initPrg( argc, argv );  // get command line, setup logging
+  if( sysRc != 0 ) goto _door;   
 
-  const char *logName = getStrAttr( "log" ) ;
-  
-  if( logName == NULL ) ;
-
-  initLogging( "var/log/main.log", INF ) ;
-  logger( LSTD_PRG_START, basename( (char*) argv[0] ) ) ;
-#endif
-
-  sysRc = initPrg( argc, argv ) ;
-  if( sysRc != 0 ) goto _door ;
+  // -------------------------------------------------------
+  // main work
+  // -------------------------------------------------------
+  sysRc = worker( );
+  if( sysRc != 0 ) goto _door;   
 
 _door :
 
@@ -68,16 +74,27 @@ _door :
 /*                                                                            */
 /******************************************************************************/
 
+/******************************************************************************/
+/*  init program                                                */
+/*    - analyse cmdln attributes                                */
+/*    - setup logging                                    */
+/******************************************************************************/
 int initPrg( int argc, const char* argv[] )
 {
   int sysRc ;
 
+  // -------------------------------------------------------
+  // handle command line
+  // -------------------------------------------------------
   sysRc = handleCmdLn( argc, argv ) ;
   if( sysRc != 0 ) goto _door ;
 
   const char *logName = getStrAttr( "log" ) ;
   if( logName == NULL ) ;
 
+  // -------------------------------------------------------
+  // set logging
+  // -------------------------------------------------------
   sysRc = initLogging( "var/log/main.log", INF ) ;
   if( sysRc != 0 ) goto _door ;
 
@@ -86,3 +103,5 @@ int initPrg( int argc, const char* argv[] )
 _door :
   return sysRc ;
 }
+
+
