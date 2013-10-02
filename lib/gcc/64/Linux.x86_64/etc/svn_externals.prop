@@ -4,3 +4,5 @@ libmqutil.a  http://syspver1/svn//develop/misc/rollout/elf/lib/gcc/64/Linux.x86_
 libmqutil.so http://syspver1/svn//develop/misc/rollout/elf/lib/gcc/64/Linux.x86_64/libmqutil.so
 libinih.a  http://syspver1/svn//develop/misc/rollout/elf/lib/gcc/64/Linux.x86_64/libinih.a
 libinih.so http://syspver1/svn//develop/misc/rollout/elf/lib/gcc/64/Linux.x86_64/libinih.so
+libsogen.a  http://syspver1/svn//develop/misc/rollout/elf/lib/gcc/64/Linux.x86_64/libsogen.a
+libsogen.so http://syspver1/svn//develop/misc/rollout/elf/lib/gcc/64/Linux.x86_64/libsogen.so
