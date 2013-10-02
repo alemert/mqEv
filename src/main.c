@@ -18,12 +18,18 @@
 // ---------------------------------------------------------
 // system
 // ---------------------------------------------------------
+#include <stdio.h>
 #include <libgen.h>
 
 // ---------------------------------------------------------
 // own 
 // ---------------------------------------------------------
-#include "main.h"
+#include "cmdln.h"
+#include <ctl.h>
+#include <msgcat/lgstd.h>
+#include <inihnd.h>
+
+#include <worker.h>
 
 /******************************************************************************/
 /*   D E F I N E S                                                            */
@@ -58,10 +64,19 @@ int main(int argc, const char* argv[] )
   // -------------------------------------------------------
   // main work
   // -------------------------------------------------------
-  sysRc = worker( );
-  if( sysRc != 0 ) goto _door;   
+  if( !getFlagAttr( "xymon" ) )
+  {
+    sysRc = xymonWorker() ;
+    goto _door;
+  }
 
-_door :
+  if( !getFlagAttr( "console" ) )
+  {
+    sysRc = consoleWorker() ;
+    goto _door;
+  }
+
+  _door :
 
   return sysRc ;
 }
@@ -89,18 +104,33 @@ int initPrg( int argc, const char* argv[] )
   sysRc = handleCmdLn( argc, argv ) ;
   if( sysRc != 0 ) goto _door ;
 
-  const char *logName = getStrAttr( "log" ) ;
-  if( logName == NULL ) ;
+  // -------------------------------------------------------
+  // handle ini file
+  // -------------------------------------------------------
+  const char *ini = getStrAttr( "ini" ) ;
+  if( ini )
+  {
+    sysRc = iniHandler( ini ) ;
+    if( sysRc != 0 ) goto _door ;
+  }
 
   // -------------------------------------------------------
   // set logging
   // -------------------------------------------------------
-  sysRc = initLogging( "var/log/main.log", INF ) ;
+  const char *logName = getStrAttr( "log" ) ;
+  if( logName == NULL ) 
+  {
+    sysRc = initLogging( "var/log/mqev.log", INF ) ;
+  }
+  else
+  {
+    sysRc = initLogging( logName, INF ) ;
+  }
   if( sysRc != 0 ) goto _door ;
 
   logger( LSTD_PRG_START, basename( (char*) argv[0] ) ) ;
   
-_door :
+  _door :
   return sysRc ;
 }
 
