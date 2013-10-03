@@ -118,6 +118,16 @@ int initPrg( int argc, const char* argv[] )
   // set logging
   // -------------------------------------------------------
   const char *logName = getStrAttr( "log" ) ;
+#if(1)
+  tIniNode *searchIni ;
+  searchIni = setIniSingleSearchNode( NULL     , "system", NULL, NULL, 0 );
+  searchIni = setIniSingleSearchNode( searchIni, "log"   , NULL, NULL, 0 );
+  if( logName == NULL ) 
+  {
+    tIniNode *found = existsIniNode( A_MAIN, NULL, searchIni ) ;
+    printf("\n");
+  }
+#endif
   if( logName == NULL ) 
   {
     sysRc = initLogging( "var/log/mqev.log", INF ) ;
