@@ -50,7 +50,7 @@ int initMq( ) ;
 /******************************************************************************/
 
 /******************************************************************************/
-/*  xymon worker                  */
+/*  xymon worker                                    */
 /******************************************************************************/
 int xymonWorker( )
 {
@@ -67,7 +67,7 @@ int xymonWorker( )
 }
 
 /******************************************************************************/
-/*  console worker              */
+/*  console worker                                  */
 /******************************************************************************/
 int consoleWorker()
 {
@@ -85,23 +85,22 @@ int consoleWorker()
 }
 
 /******************************************************************************/
-/* init mq connection      */
+/* init mq connection                        */
 /******************************************************************************/
 int initMq( )
 {
   logFuncCall( ) ;
 
-  MQLONG sysRc = MQRC_NONE ;
+  tIniNode *searchIni ;
 
+  MQLONG sysRc = MQRC_NONE ;
   MQHCONN hConn ;
 
-  char defQmgr[1] ; defQmgr[0] = 0 ;
   char *qmgr    = getStrAttr( "qmgr" );
-  
   if( qmgr == NULL )
   {
-    qmgr = defQmgr ;
-  }
+     searchIni = getIniNode("mq","log");     
+  } 
 
   sysRc = mqConn( qmgr, &hConn ) ;  
   switch( sysRc )

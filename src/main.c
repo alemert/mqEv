@@ -117,29 +117,34 @@ int initPrg( int argc, const char* argv[] )
   // -------------------------------------------------------
   // set logging
   // -------------------------------------------------------
-  const char *logName = getStrAttr( "log" ) ;
-#if(1)
-  tIniNode *searchIni ;
-  searchIni = setIniSingleSearchNode( NULL     , "system", NULL, NULL, 0 );
-  searchIni = setIniSingleSearchNode( searchIni, "log"   , NULL, NULL, 0 );
-  if( logName == NULL ) 
-  {
-    tIniNode *found = existsIniNode( A_MAIN, NULL, searchIni ) ;
-    printf("\n");
-  }
-#endif
-  if( logName == NULL ) 
-  {
-    sysRc = initLogging( "var/log/mqev.log", INF ) ;
-  }
-  else
-  {
-    sysRc = initLogging( logName, INF ) ;
-  }
-  if( sysRc != 0 ) goto _door ;
-
-  logger( LSTD_PRG_START, basename( (char*) argv[0] ) ) ;
-  
+  char *logName  = getStrAttr( "log" );            // get logfile name from 
+  char *logLevelBuff;                              //  command line
+  int  logLevel = INF;                             // default log level
+                                                   //
+  if( logName == NULL )                            // if log not set by cmdln
+  {                                                // try to set it from ini
+    tIniNode *searchIni ;                          //
+    searchIni = getIniNode("system","log");        // system.log node from ini
+    logName   = getIniStrValue(searchIni,"file" ); // get file & level from node
+    logLevelBuff = getIniStrValue(searchIni,"level"); 
+    if( logLevelBuff )                             // if log level set by ini
+    {                                              // change it from default 
+      logLevel = logStr2lev( logLevelBuff );       //  to ini-set value
+    }                                              //
+  }                                                //
+                                                   //
+  if( logName == NULL )                            // if log file name not set
+  {                                                //  by cmdln or ini
+    sysRc=initLogging("var/log/mqev.log",logLevel);//  set it to "some" default
+  }                                                //
+  else                                             //
+  {                                                //
+    sysRc = initLogging( logName, logLevel ) ;     // set log file name to
+  }                                                // cmdln-cfg or ini-cfg
+  if( sysRc != 0 ) goto _door;                     //
+                                                   //
+  logger(LSTD_PRG_START,basename((char*) argv[0]));//
+                                                   //
   _door :
   return sysRc ;
 }
