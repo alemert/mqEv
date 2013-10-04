@@ -21,6 +21,7 @@
 // own 
 // ---------------------------------------------------------
 #include "cmdln.h"
+#include <inihnd.h>
 #include <ctl.h>
 #include <msgcat/lgstd.h>
 
@@ -96,18 +97,26 @@ int initMq( )
   MQLONG sysRc = MQRC_NONE ;
   MQHCONN hConn ;
 
-  char *qmgr    = getStrAttr( "qmgr" );
-  if( qmgr == NULL )
-  {
-     searchIni = getIniNode("mq","log");     
-  } 
-
-  sysRc = mqConn( qmgr, &hConn ) ;  
-  switch( sysRc )
-  {
-    case MQRC_NONE : break ;
-    default        : goto _door ;
-  }
+  // -------------------------------------------------------
+  // connect to qmgr
+  // -------------------------------------------------------
+  char *qmgr = getStrAttr( "qmgr" );         // try to get qmgr name from cmdln
+  if( qmgr == NULL )                         // if no qmgr name on cmdln 
+  {                                          // try to get it from the ini file
+     qmgr = getIniStrValue( getIniNode("mq","qmgr"), name ); 
+  }                                          //
+                                             // if no qmgr on cmdln or ini
+  sysRc = mqConn( qmgr, &hConn );            //   use default qmgr (qmgr==NULL)
+  switch( sysRc )                            // connect to qmgr 
+  {                                          //
+    case MQRC_NONE : break ;                 // connect ok
+    default        : goto _door ;            // connect failed
+  }                                          //
+                                             //
+  // -------------------------------------------------------
+  // open queue
+  // -------------------------------------------------------
+  
 
   _door :
 
