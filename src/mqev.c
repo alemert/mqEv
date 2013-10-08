@@ -23,6 +23,8 @@
 // mq
 // ---------------------------------------------------------
 #include <cmqc.h>
+#include <cmqcfc.h>
+#include <cmqbc.h>
 
 // ---------------------------------------------------------
 // own 
@@ -132,7 +134,7 @@ int initMq( )
 
 
 /******************************************************************************/
-/* browse events      */
+/* browse events            */
 /******************************************************************************/
 int browseEvents( )
 {
@@ -140,59 +142,111 @@ int browseEvents( )
 
   int sysRc = 0 ;
 
-  MQMD evMsgDscr = {MQMD_DEFAULT}; // message descriptor (set to default)
-  PMQVOID message;                 // message body
-  MQLONG  msgLng    =  256;        // initial msg length (can be resize later)
-  MQGMO   getMsgOpt = _gDefGMO ;   // get message option set to default
-  MQLONG  compCode  ;
-  MQLONG  reason    ;
-                                   //
+  MQMD  evMsgDscr = {MQMD_DEFAULT};  // message descriptor (set to default)
+  MQGMO getMsgOpt = _gDefGMO;        // get message option set to default
+                                     //
+  MQHBAG evBag = MQHB_UNUSABLE_HBAG; //
+                                     //
+  MQLONG  compCode;                  //
+  MQLONG  reason   = MQRC_NONE;      //
+                                     //
+  sysRc = reason;                    //
+                                     //
+  // -------------------------------------------------------  
+  // init mq for get events
+  // -------------------------------------------------------  
   getMsgOpt.Options = MQGMO_WAIT              // wait for new messages
                     + MQGMO_FAIL_IF_QUIESCING // fail if quiesching
                     + MQGMO_CONVERT           // convert if necessary
-                    + MQGMO_BROWSE_NEXT;      // additional options will be set 
-  getMsgOpt.Version = MQGMO_VERSION_2;        // in mqGet
+                    + MQGMO_BROWSE_NEXT;      // browse messages
+  getMsgOpt.Version = MQGMO_VERSION_2;        // gmo ver 2 for bags
                                               //
-#if(0)
-  message = (PMQVOID) malloc( sizeof(char)*msgLng );
-#endif                              //
-  while( sysRc != MQRC_NO_MSG_AVAILABLE )  // browse all available messages
-  {                                  //
-    #if(0)
-    sysRc = mqGet( _ghConn    ,            // global (qmgr) connect handle
-                   _gohEvQueue,            // globale (queue) open handle
-                   message    ,            // message body (buffer)
-                   &msgLng    ,            // message length (input/output)
-                   &evMsgDscr ,            // message descriptot
-                   getMsgOpt  ,            // get msg options
-                   1000      );            // 1 sec wait interval
-    #endif
-    mqGetBag( _ghConn, _gohEvQueue, &evMsgDscr, getMsgOpt, evBag, compCode, reason);  
-                              //
-    switch( sysRc )              //
-    {                              //
-      case MQRC_NONE :         //
-      {                            //
-        printf( "%s\n", (char*) message ) ;
-        continue ;        //
-      }                                //
-      case MQRC_NO_MSG_AVAILABLE :       //
-      {          //
-        continue ;      //
-      }          //
-      case MQRC_TRUNCATED_MSG_FAILED :     //
-      {                              //
-        message = resizeMqMessageBuffer( message, &msgLng );       //
-        continue ;              //
-      }                                  //
-      default :       //
-      {          //
-        goto _door ;      //
-      }          //
-    }                                      //
-                                           //
-  }                                        //
-                                           //
+  mqCreateBag( MQCBO_USER_BAG,                // create a user bag
+               &evBag        ,                // 
+               &compCode     ,                //
+               &reason      );                //
+                                              //
+  switch( reason )                            // handle mqCreateBag error
+  {                                           //
+    case MQRC_NONE :                          //
+    {                                         //
+      logMQCall(DBG,"mqCreateBag",reason);    //
+      break;                                  //
+    }                                         //
+    default :                                 //
+    {                                         //
+      logMQCall(ERR,"mqCreateBag",reason);    //
+      sysRc = reason;                         //
+      goto _door;                             //
+    }                                         //
+  }                                           //
+                                              //
+  // -------------------------------------------------------  
+  // browse available events 
+  // -------------------------------------------------------  
+  dumpMqStruct( "GMO  ", &getMsgOpt, NULL );  //
+  dumpMqStruct( "MD   ", &evMsgDscr, NULL );  //
+                                              //
+  while( reason != MQRC_NO_MSG_AVAILABLE )    // browse all available messages
+  {                                           //
+    mqGetBag( _ghConn    ,                    // global (qmgr) connect handle
+              _gohEvQueue,                    // globale (queue) open handle
+              &evMsgDscr ,                    // message descriptor
+              &getMsgOpt ,                    // get message options
+              evBag      ,                    // event bag
+              &compCode  ,                    // compelition code
+              &reason   );                    // mq reason
+                                              //
+    dumpMqStruct( "GMO  ", &getMsgOpt, NULL );//
+    dumpMqStruct( "MD   ", &evMsgDscr, NULL );//
+                                              //
+    switch( reason )                          //
+    {                                         //
+      case MQRC_NONE :                        //
+      {                                       //
+        logMQCall( DBG, "mqGetBag", reason ); //
+        continue;                             //
+      }                                       //
+      case MQRC_NO_MSG_AVAILABLE :            //
+      {                                       //
+        logMQCall( DBG, "mqGetBag", reason ); //
+        continue;                             //
+      }                                       //
+      default :                               //
+      {                                       //
+        logMQCall( ERR, "mqGetBag", reason ); //
+        sysRc = reason;                       //
+        goto _door;                           //
+      }                                       //
+    }                                         //
+                                              //
+  }                                           //
+                                              //
+  // -------------------------------------------------------  
+  // delete (opened) bag 
+  // -------------------------------------------------------  
+  if( evBag != MQHB_UNUSABLE_HBAG )           //
+  {              //
+    mqDeleteBag( &evBag   ,       //
+                 &compCode,       //
+                 &reason );      //
+                //
+    switch( reason )                          // handle mqCreateBag error
+    {                                         //
+      case MQRC_NONE :                        //
+      {                                       //
+        logMQCall(DBG,"mqDeleteBag",reason);  //
+        break;                                //
+      }                                       //
+      default :                               //
+      {                                       //
+        logMQCall(ERR,"mqDeleteBag",reason);  //
+        sysRc = reason;                    //
+        goto _door;                           //
+      }                                       //
+    }                                         //
+  }
+
   _door:
 
   logFuncExit( ) ;
