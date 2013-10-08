@@ -4,7 +4,6 @@
 /*    Worker functions:                              */
 /*      - xymonWorker                                      */
 /*      - consoleWorker                                */
-/*      - initMq                        */
 /*                                                        */
 /******************************************************************************/
 
@@ -27,6 +26,8 @@
 
 #include <mqbase.h>
 
+#include <mqev.h>
+
 /******************************************************************************/
 /*   G L O B A L S                                                            */
 /******************************************************************************/
@@ -42,7 +43,6 @@
 /******************************************************************************/
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
-int initMq( ) ;
 
 /******************************************************************************/
 /*                                                                            */
@@ -76,51 +76,18 @@ int consoleWorker()
 
   int sysRc = 0 ;
 
-  initMq();
+  sysRc = initMq();
+  if( sysRc != 0 )
+  {
+    goto _door ;
+  }
 
-#if(0)
-  _door :
-#endif
-  logFuncExit( ) ;
-  return sysRc ;
-}
+  browseEvents();
 
-/******************************************************************************/
-/* init mq connection                        */
-/******************************************************************************/
-int initMq( )
-{
-  logFuncCall( ) ;
-
-  tIniNode *searchIni ;
-
-  MQLONG sysRc = MQRC_NONE ;
-  MQHCONN hConn ;
-
-  // -------------------------------------------------------
-  // connect to qmgr
-  // -------------------------------------------------------
-  char *qmgr = getStrAttr( "qmgr" );         // try to get qmgr name from cmdln
-  if( qmgr == NULL )                         // if no qmgr name on cmdln 
-  {                                          // try to get it from the ini file
-     qmgr = getIniStrValue( getIniNode("mq","qmgr"), name ); 
-  }                                          //
-                                             // if no qmgr on cmdln or ini
-  sysRc = mqConn( qmgr, &hConn );            //   use default qmgr (qmgr==NULL)
-  switch( sysRc )                            // connect to qmgr 
-  {                                          //
-    case MQRC_NONE : break ;                 // connect ok
-    default        : goto _door ;            // connect failed
-  }                                          //
-                                             //
-  // -------------------------------------------------------
-  // open queue
-  // -------------------------------------------------------
-  
 
   _door :
 
   logFuncExit( ) ;
-
   return sysRc ;
 }
+

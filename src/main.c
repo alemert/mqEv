@@ -125,8 +125,8 @@ int initPrg( int argc, const char* argv[] )
   {                                                // try to set it from ini
     tIniNode *searchIni ;                          //
     searchIni = getIniNode("system","log");        // system.log node from ini
-    logName   = getIniStrValue(searchIni,"file" ); // get file & level from node
-    logLevelBuff = getIniStrValue(searchIni,"level"); 
+    logName   = getIniStrValue( searchIni,"file" );// get file & level from node
+    logLevelBuff = getIniStrValue( searchIni,"level" ); 
     if( logLevelBuff )                             // if log level set by ini
     {                                              // change it from default 
       logLevel = logStr2lev( logLevelBuff );       //  to ini-set value
