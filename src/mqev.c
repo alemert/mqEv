@@ -143,9 +143,9 @@ int browseEvents( )
   int sysRc = 0 ;
 
   MQMD  evMsgDscr = {MQMD_DEFAULT};  // message descriptor (set to default)
-  MQGMO getMsgOpt = _gDefGMO;        // get message option set to default
+  MQGMO getMsgOpt = {MQGMO_DEFAULT}; // get message option set to default
                                      //
-  MQHBAG evBag = MQHB_UNUSABLE_HBAG; //
+  MQHBAG evBag;  // = MQHB_UNUSABLE_HBAG; //
                                      //
   MQLONG  compCode;                  //
   MQLONG  reason   = MQRC_NONE;      //
@@ -155,30 +155,15 @@ int browseEvents( )
   // -------------------------------------------------------  
   // init mq for get events
   // -------------------------------------------------------  
-  getMsgOpt.Options = MQGMO_WAIT              // wait for new messages
-                    + MQGMO_FAIL_IF_QUIESCING // fail if quiesching
-                    + MQGMO_CONVERT           // convert if necessary
-                    + MQGMO_BROWSE_NEXT;      // browse messages
-  getMsgOpt.Version = MQGMO_VERSION_2;        // gmo ver 2 for bags
+  
+  getMsgOpt.MatchOptions = MQMO_NONE;
                                               //
-  mqCreateBag( MQCBO_USER_BAG,                // create a user bag
-               &evBag        ,                // 
-               &compCode     ,                //
-               &reason      );                //
+  reason = mqOpenBag( &evBag );               //
                                               //
-  switch( reason )                            // handle mqCreateBag error
+  if( reason != MQRC_NONE )              //
   {                                           //
-    case MQRC_NONE :                          //
-    {                                         //
-      logMQCall(DBG,"mqCreateBag",reason);    //
-      break;                                  //
-    }                                         //
-    default :                                 //
-    {                                         //
-      logMQCall(ERR,"mqCreateBag",reason);    //
-      sysRc = reason;                         //
-      goto _door;                             //
-    }                                         //
+    sysRc = reason;                           //
+    goto _door;                               //
   }                                           //
                                               //
   // -------------------------------------------------------  
@@ -189,32 +174,23 @@ int browseEvents( )
                                               //
   while( reason != MQRC_NO_MSG_AVAILABLE )    // browse all available messages
   {                                           //
-    mqGetBag( _ghConn    ,                    // global (qmgr) connect handle
-              _gohEvQueue,                    // globale (queue) open handle
-              &evMsgDscr ,                    // message descriptor
-              &getMsgOpt ,                    // get message options
-              evBag      ,                    // event bag
-              &compCode  ,                    // compelition code
-              &reason   );                    // mq reason
-                                              //
-    dumpMqStruct( "GMO  ", &getMsgOpt, NULL );//
-    dumpMqStruct( "MD   ", &evMsgDscr, NULL );//
+// error browsing messages, to be checked in amqsbcg.c
+  getMsgOpt.Options += MQGMO_BROWSE_NEXT;      // browse messages
+    reason = mqReadBag( _ghConn    ,          // global (qmgr) connect handle
+                        _gohEvQueue,          // globale (queue) open handle
+                        &evMsgDscr ,          // message descriptor
+                        &getMsgOpt ,          // get message options
+                         evBag    );          // bag
                                               //
     switch( reason )                          //
     {                                         //
       case MQRC_NONE :                        //
-      {                                       //
-        logMQCall( DBG, "mqGetBag", reason ); //
-        continue;                             //
-      }                                       //
       case MQRC_NO_MSG_AVAILABLE :            //
       {                                       //
-        logMQCall( DBG, "mqGetBag", reason ); //
         continue;                             //
       }                                       //
       default :                               //
       {                                       //
-        logMQCall( ERR, "mqGetBag", reason ); //
         sysRc = reason;                       //
         goto _door;                           //
       }                                       //
@@ -225,27 +201,13 @@ int browseEvents( )
   // -------------------------------------------------------  
   // delete (opened) bag 
   // -------------------------------------------------------  
-  if( evBag != MQHB_UNUSABLE_HBAG )           //
-  {              //
-    mqDeleteBag( &evBag   ,       //
-                 &compCode,       //
-                 &reason );      //
-                //
-    switch( reason )                          // handle mqCreateBag error
-    {                                         //
-      case MQRC_NONE :                        //
-      {                                       //
-        logMQCall(DBG,"mqDeleteBag",reason);  //
-        break;                                //
-      }                                       //
-      default :                               //
-      {                                       //
-        logMQCall(ERR,"mqDeleteBag",reason);  //
-        sysRc = reason;                    //
-        goto _door;                           //
-      }                                       //
-    }                                         //
-  }
+  reason = mqCloseBag( &evBag ) ;           // mqGetBag interface
+                                            //
+  if( reason != MQRC_NONE )                   // handle mqCreateBag error
+  {                                           //
+    sysRc = reason;                       //
+    goto _door;                           //
+  }                        //
 
   _door:
 
