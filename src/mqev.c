@@ -145,22 +145,22 @@ int browseEvents( )
   MQMD  evMsgDscr = {MQMD_DEFAULT};  // message descriptor (set to default)
   MQGMO getMsgOpt = {MQGMO_DEFAULT}; // get message option set to default
                                      //
-  MQHBAG evBag;  // = MQHB_UNUSABLE_HBAG; //
+  MQHBAG evBag;              // 
                                      //
   MQLONG  compCode;                  //
-  MQLONG  reason   = MQRC_NONE;      //
+  MQLONG  reason  = MQRC_NONE;       //
                                      //
   sysRc = reason;                    //
                                      //
   // -------------------------------------------------------  
   // init mq for get events
   // -------------------------------------------------------  
-  
-  getMsgOpt.MatchOptions = MQMO_NONE;
+  getMsgOpt.Options     |= MQGMO_BROWSE_NEXT; // browse messages
+  getMsgOpt.MatchOptions = MQMO_NONE;         //
                                               //
   reason = mqOpenBag( &evBag );               //
                                               //
-  if( reason != MQRC_NONE )              //
+  if( reason != MQRC_NONE )                   //
   {                                           //
     sysRc = reason;                           //
     goto _door;                               //
@@ -174,8 +174,6 @@ int browseEvents( )
                                               //
   while( reason != MQRC_NO_MSG_AVAILABLE )    // browse all available messages
   {                                           //
-// error browsing messages, to be checked in amqsbcg.c
-  getMsgOpt.Options += MQGMO_BROWSE_NEXT;      // browse messages
     reason = mqReadBag( _ghConn    ,          // global (qmgr) connect handle
                         _gohEvQueue,          // globale (queue) open handle
                         &evMsgDscr ,          // message descriptor
@@ -201,13 +199,13 @@ int browseEvents( )
   // -------------------------------------------------------  
   // delete (opened) bag 
   // -------------------------------------------------------  
-  reason = mqCloseBag( &evBag ) ;           // mqGetBag interface
-                                            //
+  reason = mqCloseBag( &evBag );              // mqGetBag interface
+                                              //
   if( reason != MQRC_NONE )                   // handle mqCreateBag error
   {                                           //
-    sysRc = reason;                       //
-    goto _door;                           //
-  }                        //
+    sysRc = reason;                           //
+    goto _door;                               //
+  }                                           //
 
   _door:
 
