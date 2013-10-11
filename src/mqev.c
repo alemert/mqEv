@@ -1,13 +1,21 @@
 /******************************************************************************/
 /*   M Q   E V E N T                                                          */
 /*                                                                            */
-/*   description:                                                  */
-/*     central mq module handling mq event monitoring            */
+/*   description:                                                             */
+/*     central mq module handling mq event monitoring                    */
 /*                                                                            */
-/*   functions:                                          */
-/*    - initMq                                  */
-/*    - browseEvents                          */
-/*                                    */
+/*   monitored events :                                              */
+/*     - Queue manager events (writing to SYSTEM.ADMIN.QMGR.EVENT)            */
+/*        - Local Events      LOCALEV(ENABLED)                    */
+/*        - Authority Events  AUTHOREV(ENABLED)                  */
+/*        - Inibit Evnets     INHIBTEV(ENABLED)              */
+/*                            */
+/*                                                                            */
+/*                                                                            */
+/*   functions:                                              */
+/*    - initMq                                      */
+/*    - browseEvents                              */
+/*                                          */
 /******************************************************************************/
 
 /******************************************************************************/
@@ -39,6 +47,8 @@
 
 #include <mqbase.h>
 #include <mqev.h>
+
+#include <node.h>
 
 /******************************************************************************/
 /*   G L O B A L S                                                            */
@@ -183,6 +193,10 @@ int browseEvents( )
     switch( reason )                          //
     {                                         //
       case MQRC_NONE :                        //
+      {
+        bag2node( evMsgDscr, evBag ) ;
+        continue ;
+      }
       case MQRC_NO_MSG_AVAILABLE :            //
       {                                       //
         continue;                             //

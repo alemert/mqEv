@@ -18,7 +18,7 @@ DBGOPT = -g
 # ------------------------------------------------------------------------------
 # sources
 # ------------------------------------------------------------------------------
-SOURCES = worker.c mqev.c
+SOURCES = worker.c mqev.c node.c
 
 #AROWN = libmsgcat.a
 LSOWN = mqutil msgcat inih sogen
