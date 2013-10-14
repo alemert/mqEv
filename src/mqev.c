@@ -193,10 +193,10 @@ int browseEvents( )
     switch( reason )                          //
     {                                         //
       case MQRC_NONE :                        //
-      {
-        bag2node( evMsgDscr, evBag ) ;
-        continue ;
-      }
+      {                              //
+        bag2mqiNode( evMsgDscr, evBag );      //
+        continue;                    //
+      }                        //
       case MQRC_NO_MSG_AVAILABLE :            //
       {                                       //
         continue;                             //
