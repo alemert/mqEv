@@ -3,14 +3,15 @@
 /*                                                                            */
 /*   functions:                                                               */
 /*    - bag2mqiNode                                                           */
-/*    - newMqiItem                                                    */
-/*    - addMqiItem                                                        */
-/*    - lastMqiItem                                                  */
-/*    - setMqiItem                                                  */
-/*    - findMqiItem                                            */
-/*    - deleteMqiItem                                  */
-/*    - addQmgrNode                              */
-/*    - findQmgrNode                                */
+/*    - newMqiItem                                                          */
+/*    - addMqiItem                                                            */
+/*    - lastMqiItem                                                      */
+/*    - setMqiItem                                                      */
+/*    - findMqiItem                                                */
+/*    - deleteMqiItem                                      */
+/*    - addQmgrNode                                        */
+/*    - findQmgrNode                                  */
+/*    - item2event            */
 /*                                                  */
 /******************************************************************************/
 
@@ -124,6 +125,8 @@ void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem );
 
 tQmgrNode* addQmgrNode( char* qmgrName );
 tQmgrNode* findQmgrNode( char* qmgrName );
+
+void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor );
 
 /******************************************************************************/
 /*                                                                            */
@@ -290,18 +293,18 @@ int bag2mqiNode( MQMD md, MQHBAG bag )
   }                                                      //
                                                          //
   qmgrItem = findMqiItem( anchor, MQCA_Q_MGR_NAME );     //
-  if( qmgrItem == NULL )      //
-  {            //
-    goto _door;      //
-  }          //
+  if( qmgrItem == NULL )                                 //
+  {                                                      //
+    goto _door;                                          //
+  }                                                      //
   qmgrNode = addQmgrNode( qmgrItem->value.strVal );      //
-  deleteMqiItem( anchor, qmgrItem );      //
-                //
-  item2Event( qmgrNode, anchor );      //
-             //
+  deleteMqiItem( anchor, qmgrItem );                     //
+                                                         //
+    item2event( qmgrNode, anchor );                      //
+                                                         //
   _door:
 
-  freeItemList( anchor );
+//  freeItemList( anchor );
   return 0;
 }
 
@@ -429,6 +432,7 @@ tMqiItem *findMqiItem( tMqiItem* anchor , MQLONG selector )
       found = item;
       break; 
     }
+    item = item->next;
   }
  
   _door:
@@ -460,7 +464,7 @@ void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem )
 
   while( item )
   {
-    if( item->next == deleteItem )
+    if( (item->next) == deleteItem )
     {
       item->next = deleteItem->next; 
       if( item->type == STRING )
@@ -470,6 +474,7 @@ void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem )
       free( deleteItem);
       break; 
     }
+    item = item->next;
   }
  
   _door:
@@ -479,7 +484,7 @@ void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem )
 }
 
 /******************************************************************************/
-/* add qmgr node                                */
+/* add qmgr node                                      */
 /******************************************************************************/
 tQmgrNode* addQmgrNode( char* qmgrName )
 {
@@ -537,4 +542,68 @@ tQmgrNode* findQmgrNode( char* qmgrName )
   _door: 
   logFuncExit( ) ;
   return found;
+}
+
+/******************************************************************************/
+/* item to event      */
+/******************************************************************************/
+void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor )
+{
+  logFuncCall( ) ;
+  
+  tMqiItem *mqiItem;
+  tEvent   *event  ;
+  
+  MQLONG eventList = 0 ;
+   
+  if( anchor == NULL )
+  {
+    goto _door;  
+  }
+
+  mqiItem = anchor->next;
+   
+  while( mqiItem )
+  {
+    switch ( mqiItem->selector )
+    {
+      case MQIASY_BAG_OPTIONS      : break;
+      case MQIASY_CODED_CHAR_SET_ID: break;
+      case MQIASY_TYPE             : break;
+      case MQIASY_VERSION          : break;
+      case MQIASY_MSG_SEQ_NUMBER   : break;
+      case MQIASY_CONTROL          : break;
+      case MQIASY_COMP_CODE        : break;
+      
+      // ---------------------------------------------------
+      // find out the type of the event (event name), 
+      //   to sort the events in one of the event lists
+      // ---------------------------------------------------
+      case MQIASY_COMMAND   :          //  if command MQCMD_Q_MGR_EVENT 
+      {                                // MQIASY_REASON has to be evaluated 
+        eventList = mqiItem->value;    // at later stage on stop/start qmgr
+        break;                         // in order to split events in lists
+      }                                //
+      case MQIASY_REASON    :      // reason code 
+      case MQIA_APPL_TYPE   :      // application type
+      case MQCACF_APPL_NAME :      // application name
+      case MQCA_Q_NAME      :      // queue name
+      {
+        // missing handling
+        break;
+      }
+      
+      default : 
+      {
+        printf( "missing selector %d\n", (int) mqiItem->selector );
+      }
+    }
+             
+    mqiItem = mqiItem->next;
+  }
+
+   
+  _door:
+  logFuncExit( ) ;
+  return;
 }
