@@ -1,14 +1,19 @@
 /******************************************************************************/
 /*                             M Q   E V E N T S                              */
-/*                                                            */
-/*  description:                                  */
-/*    start program :                                */
-/*      from cmd line                          */
-/*      triggered from qmgr                      */
+/*                                                                            */
+/*  description:                                                  */
+/*    start program :                                          */
+/*      from cmd line                                    */
+/*      triggered from qmgr                          */
 /*    read (browse) mq events from some event queue            */
-/*    analyse the event                                  */
+/*    analyse the event                                          */
 /*    show event on the console or send it to the xymon            */
-/*    rotate monitoring                              */
+/*    rotate monitoring                                      */
+/*                                                        */
+/*    functions:                      */
+/*      - main                                */
+/*      - initPrg                      */
+/*                        */
 /******************************************************************************/
 
 /******************************************************************************/

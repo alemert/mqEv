@@ -3,16 +3,20 @@
 /*                                                                            */
 /*   functions:                                                               */
 /*    - bag2mqiNode                                                           */
-/*    - newMqiItem                                                          */
+/*    - newMqiItem                                                            */
 /*    - addMqiItem                                                            */
-/*    - lastMqiItem                                                      */
-/*    - setMqiItem                                                      */
-/*    - findMqiItem                                                */
-/*    - deleteMqiItem                                      */
-/*    - addQmgrNode                                        */
-/*    - findQmgrNode                                  */
-/*    - item2event            */
-/*                                                  */
+/*    - lastMqiItem                                                           */
+/*    - setMqiItem                                                            */
+/*    - findMqiItem                                                           */
+/*    - deleteMqiItem                                                        */
+/*    - freeMqiItemValue                                          */
+/*    - addQmgrNode                                                      */
+/*    - findQmgrNode                                                */
+/*    - newEventNode                  */
+/*    - addEventNode                      */
+/*    - item2event                                    */
+/*    - moveMqiItem                        */
+/*                                                        */
 /******************************************************************************/
 
 /******************************************************************************/
@@ -96,7 +100,6 @@ struct sQmgrNode
 
 struct sEvent
 {
-  MQLONG   selector;
   tMqiItem *item;
   tEvent   *next;
 };
@@ -121,12 +124,18 @@ tMqiItem* setMqiItem( tMqiItem* item,
                       tMqiItemType type, 
                       tMqiItemVal val );
 tMqiItem* findMqiItem( tMqiItem* anchor , MQLONG selector );
+void freeMqiItemValue( tMqiItem *item );
 void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem );
 
 tQmgrNode* addQmgrNode( char* qmgrName );
 tQmgrNode* findQmgrNode( char* qmgrName );
 
+tEvent* newEventNode();
+tEvent* addEventNode( tEvent *anchor, tEvent *node );
+
 void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor );
+void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event );
+
 
 /******************************************************************************/
 /*                                                                            */
@@ -155,7 +164,7 @@ int bag2mqiNode( MQMD md, MQHBAG bag )
   tMqiItem *qmgrItem ;
   tMqiItem *anchor   = newMqiItem() ;
 
-  tQmgrNode *qmgrNode ;
+  tQmgrNode *qmgrNode = NULL;
   
   // -------------------------------------------------------
   // count items in the bag
@@ -298,10 +307,12 @@ int bag2mqiNode( MQMD md, MQHBAG bag )
     goto _door;                                          //
   }                                                      //
   qmgrNode = addQmgrNode( qmgrItem->value.strVal );      //
+  freeMqiItemValue( qmgrItem );            //
   deleteMqiItem( anchor, qmgrItem );                     //
                                                          //
-    item2event( qmgrNode, anchor );                      //
+  item2event( qmgrNode, anchor );                      //
                                                          //
+  free(anchor);
   _door:
 
 //  freeItemList( anchor );
@@ -317,11 +328,11 @@ tMqiItem* newMqiItem( )
 
   tMqiItem *item = (tMqiItem*) malloc( sizeof(tMqiItem) );
 
-  if( item == NULL )
-  {
-    logger( LSTD_MEM_ALLOC_ERROR );
-    goto _door;
-  }  
+  if( item == NULL )        //
+  {                                          //
+    logger( LSTD_MEM_ALLOC_ERROR ) ;         //
+    goto _door ;                             //
+  }                                          //
 
   item->selector     = 0 ;
   item->value.strVal =  NULL ;
@@ -442,7 +453,7 @@ tMqiItem *findMqiItem( tMqiItem* anchor , MQLONG selector )
 }
 
 /******************************************************************************/
-/* delete item            */
+/* delete item                              */
 /******************************************************************************/
 void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem )
 {
@@ -460,7 +471,7 @@ void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem )
     goto _door;
   }
 
-  item = anchor->next;
+  item = anchor;
 
   while( item )
   {
@@ -484,7 +495,18 @@ void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem )
 }
 
 /******************************************************************************/
-/* add qmgr node                                      */
+/* free node value                      */
+/******************************************************************************/
+void freeMqiItemValue( tMqiItem *item )
+{
+  if( item->type == STRING )
+  {
+    free( item->value.strVal );
+  }
+}
+
+/******************************************************************************/
+/* add qmgr node                                                  */
 /******************************************************************************/
 tQmgrNode* addQmgrNode( char* qmgrName )
 {
@@ -495,6 +517,12 @@ tQmgrNode* addQmgrNode( char* qmgrName )
   if( _gEventList == NULL ) 
   {
     _gEventList = (tQmgrNode*) malloc( sizeof(tQmgrNode) );
+    if( _gEventList == NULL )                  //
+    {                                          //
+      logger( LSTD_MEM_ALLOC_ERROR ) ;         //
+      goto _door ;                             //
+    }                                          //
+
     node = _gEventList ;
     sprintf( node->qmgr, qmgrName );
     goto _door;
@@ -507,6 +535,11 @@ tQmgrNode* addQmgrNode( char* qmgrName )
   }
  
   node = (tQmgrNode*) malloc( sizeof(tQmgrNode) );
+  if( node == NULL )                  //
+  {                                          //
+    logger( LSTD_MEM_ALLOC_ERROR ) ;         //
+    goto _door ;                             //
+  }                                          //
   sprintf( node->qmgr, qmgrName );
   node->next = NULL ;
   
@@ -516,7 +549,7 @@ tQmgrNode* addQmgrNode( char* qmgrName )
 }
 
 /******************************************************************************/
-/* find qmgr node                                              */
+/* find qmgr node                                                          */
 /******************************************************************************/
 tQmgrNode* findQmgrNode( char* qmgrName )
 {
@@ -530,6 +563,8 @@ tQmgrNode* findQmgrNode( char* qmgrName )
     goto _door;
   }
 
+  node = _gEventList ;
+
   while( node ) 
   {
     if( strcmp( qmgrName, node->qmgr ) == 0 )
@@ -537,6 +572,7 @@ tQmgrNode* findQmgrNode( char* qmgrName )
       found = node ;
       break ;
     }
+    node = node->next ;
   }
 
   _door: 
@@ -545,14 +581,65 @@ tQmgrNode* findQmgrNode( char* qmgrName )
 }
 
 /******************************************************************************/
-/* item to event      */
+/* new event node                                  */
+/******************************************************************************/
+tEvent* newEventNode()
+{
+  logFuncCall( ) ;
+  tEvent *event; 
+
+  event = (tEvent*) malloc( sizeof(tEvent));
+  if( event == NULL )                      //
+  {                                          //
+    logger( LSTD_MEM_ALLOC_ERROR ) ;         //
+    goto _door ;                             //
+  }                                          //
+
+  event->item = NULL;
+  event->next = NULL;
+
+  _door: 
+  logFuncExit( ) ;
+  return event;
+}
+
+/******************************************************************************/
+/* add event node                    */
+/******************************************************************************/
+tEvent* addEventNode( tEvent *anchor, tEvent *node )
+{
+  logFuncCall( ) ;
+
+  tEvent *last = anchor ;
+
+  while( last->next )
+  {
+    last = last->next;
+  }
+
+  last->next = node;
+
+  logFuncExit( ) ;
+  return last;
+
+}
+
+/******************************************************************************/
+/* item to event                */
 /******************************************************************************/
 void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor )
 {
   logFuncCall( ) ;
   
   tMqiItem *mqiItem;
-  tEvent   *event  ;
+  tMqiItem *nextMqiItem;
+
+  tEvent   *event  = newEventNode();
+  if( event == NULL )                      //
+  {                                          //
+    goto _door ;                             //
+  }                                          //
+
   
   MQLONG eventList = 0 ;
    
@@ -565,31 +652,45 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor )
    
   while( mqiItem )
   {
+    nextMqiItem = mqiItem->next;
     switch ( mqiItem->selector )
     {
-      case MQIASY_BAG_OPTIONS      : break;
-      case MQIASY_CODED_CHAR_SET_ID: break;
-      case MQIASY_TYPE             : break;
-      case MQIASY_VERSION          : break;
-      case MQIASY_MSG_SEQ_NUMBER   : break;
-      case MQIASY_CONTROL          : break;
-      case MQIASY_COMP_CODE        : break;
+      // ---------------------------------------------------
+      // items to be ignored
+      // ---------------------------------------------------
+      case MQIASY_BAG_OPTIONS      : 
+      case MQIASY_CODED_CHAR_SET_ID: 
+      case MQIASY_TYPE             :
+      case MQIASY_VERSION          : 
+      case MQIASY_MSG_SEQ_NUMBER   :
+      case MQIASY_CONTROL          : 
+      case MQIASY_COMP_CODE        :
+      {
+        freeMqiItemValue( mqiItem );       // free item value for strings
+        deleteMqiItem(anchor,mqiItem);     // delete and free item
+	break;
+      }
       
       // ---------------------------------------------------
       // find out the type of the event (event name), 
       //   to sort the events in one of the event lists
       // ---------------------------------------------------
-      case MQIASY_COMMAND   :          //  if command MQCMD_Q_MGR_EVENT 
-      {                                // MQIASY_REASON has to be evaluated 
-        eventList = mqiItem->value;    // at later stage on stop/start qmgr
-        break;                         // in order to split events in lists
-      }                                //
+      case MQIASY_COMMAND :                // if command MQCMD_Q_MGR_EVENT 
+      {                                    // MQIASY_REASON has to be evaluated at 
+        eventList = mqiItem->value.intVal; // at later stage in order to assign
+        freeMqiItemValue( mqiItem );       // stop/start qmgr events to a 
+        deleteMqiItem(anchor,mqiItem);     // special list 
+        break;                             //
+      }                                    //
+      // ---------------------------------------------------
+      // items to be moved in event list
+      // ---------------------------------------------------
       case MQIASY_REASON    :      // reason code 
       case MQIA_APPL_TYPE   :      // application type
       case MQCACF_APPL_NAME :      // application name
       case MQCA_Q_NAME      :      // queue name
       {
-        // missing handling
+        moveMqiItem( mqiItem, anchor, event );
         break;
       }
       
@@ -599,11 +700,67 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor )
       }
     }
              
-    mqiItem = mqiItem->next;
+    mqiItem = nextMqiItem;
   }
-
-   
+  
+  switch( eventList )
+  {
+    case MQCMD_Q_MGR_EVENT :
+    {
+      // find the reason; 
+      // if reason is start / stop put to qmgrEvent
+      // else put to single Event
+      if( !(qmgrNode->qmgrEvent) )
+      {
+	qmgrNode->qmgrEvent = event;
+	break;
+      }
+      addEventNode( qmgrNode->qmgrEvent, event );
+      break ;
+    }
+    default : 
+    {
+      printf( "missing selector %d\n", (int) mqiItem->selector );
+    }
+  }
+  
   _door:
   logFuncExit( ) ;
   return;
 }
+
+
+/******************************************************************************/
+/* move mqi item               */
+/*    items will be moved from item list to event list       */
+/******************************************************************************/
+void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event )
+{
+  logFuncCall( ) ;
+  tMqiItem *prev = anchor;
+  tMqiItem *lastEvItem ;
+  
+  while( prev->next != item )
+  {
+    prev = prev->next;
+    if( !prev ) goto _door;
+  }
+
+  prev->next = item->next;
+  item->next = NULL;
+  if( !(event->item) )
+  {
+    event->item = item;
+  }
+  else
+  {
+    lastEvItem = lastMqiItem( event->item );
+    lastEvItem->next = item;
+  }
+  
+  _door:
+          
+  logFuncExit( ) ;
+  return;
+}
+        

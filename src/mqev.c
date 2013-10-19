@@ -157,7 +157,7 @@ int browseEvents( )
                                      //
   MQHBAG evBag;              // 
                                      //
-  MQLONG  compCode;                  //
+//MQLONG  compCode;                  //
   MQLONG  reason  = MQRC_NONE;       //
                                      //
   sysRc = reason;                    //
