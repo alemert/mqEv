@@ -434,11 +434,11 @@ tMqiItem *findMqiItem( tMqiItem* anchor , MQLONG selector )
     goto _door;
   }
 
-  item = anchor->next;
+  item = anchor;
 
   while( item )
   {
-    if( item->selector == selector )
+    if( (item->selector) == selector )
     {
       found = item;
       break; 
@@ -633,6 +633,7 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor )
   
   tMqiItem *mqiItem;
   tMqiItem *nextMqiItem;
+  tMqiItem *tmpItem;
 
   tEvent   *event  = newEventNode();
   if( event == NULL )                      //
@@ -689,6 +690,7 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor )
       case MQIA_APPL_TYPE   :      // application type
       case MQCACF_APPL_NAME :      // application name
       case MQCA_Q_NAME      :      // queue name
+      case MQIACF_REASON_QUALIFIER :
       {
         moveMqiItem( mqiItem, anchor, event );
         break;
@@ -705,23 +707,44 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor )
   
   switch( eventList )
   {
-    case MQCMD_Q_MGR_EVENT :
-    {
-      // find the reason; 
-      // if reason is start / stop put to qmgrEvent
-      // else put to single Event
-      if( !(qmgrNode->qmgrEvent) )
-      {
-	qmgrNode->qmgrEvent = event;
-	break;
-      }
-      addEventNode( qmgrNode->qmgrEvent, event );
-      break ;
-    }
-    default : 
-    {
-      printf( "missing selector %d\n", (int) mqiItem->selector );
-    }
+    // -----------------------------------------------------
+    // queue manager event 
+    //   message went to DLQ, put event to single event list
+    //   QMGR was stopped / started, put event to QMGR list
+    // -----------------------------------------------------
+    case MQCMD_Q_MGR_EVENT :                          //
+    {                                                 //
+      tmpItem=findMqiItem(event->item,MQIASY_REASON); // check the reason for
+      switch( tmpItem->value.intVal )                 //   qmgr-event
+      {                                               //
+        case MQRC_Q_MGR_ACTIVE :                      // if start qmgr
+        case MQRC_Q_MGR_NOT_ACTIVE :                  // of stop qmgr
+        {                                             // put event to qmgr list
+          if( !(qmgrNode->qmgrEvent) )                //
+          {                                           //
+            qmgrNode->qmgrEvent = event;              //
+            break;                                    //
+          }                                           //
+          addEventNode( qmgrNode->qmgrEvent, event ); //
+          break;                                      //
+        }                                             //
+        default :                                     //
+        {                                             // if not start and
+          if( !(qmgrNode->singleEvent) )              // not stop qmgr 
+          {                                           // (probably DLQ message) 
+            qmgrNode->qmgrEvent = event;              // put event to the 
+            break;                                    // single event list
+          }                                           //
+          addEventNode( qmgrNode->qmgrEvent, event ); //
+          break;                                      //
+        }                                             //
+      }                                               //
+      break;      // switch( eventList )
+    }                                                 //
+    default :                                         //
+    {                                                 //
+      printf( "missing selector %d\n", (int) eventList );
+    }                                                 //
   }
   
   _door:
@@ -738,7 +761,7 @@ void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event )
 {
   logFuncCall( ) ;
   tMqiItem *prev = anchor;
-  tMqiItem *lastEvItem ;
+  tMqiItem *lastEvItem = NULL ;
   
   while( prev->next != item )
   {
