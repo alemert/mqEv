@@ -9,14 +9,15 @@
 /*    - setMqiItem                                                            */
 /*    - findMqiItem                                                           */
 /*    - deleteMqiItem                                                        */
-/*    - freeMqiItemValue                                          */
-/*    - addQmgrNode                                                      */
-/*    - findQmgrNode                                                */
-/*    - newEventNode                  */
-/*    - addEventNode                      */
-/*    - item2event                                    */
-/*    - moveMqiItem                        */
-/*                                                        */
+/*    - freeMqiItemValue                                                */
+/*    - addQmgrNode                                                          */
+/*    - findQmgrNode                                                    */
+/*    - lastQmgrNode              */
+/*    - newEventNode                            */
+/*    - addEventNode                          */
+/*    - item2event                                        */
+/*    - moveMqiItem                            */
+/*                                                              */
 /******************************************************************************/
 
 /******************************************************************************/
@@ -129,6 +130,7 @@ void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem );
 
 tQmgrNode* addQmgrNode( char* qmgrName );
 tQmgrNode* findQmgrNode( char* qmgrName );
+tQmgrNode* lastQmgrNode( );
 
 tEvent* newEventNode();
 tEvent* addEventNode( tEvent *anchor, tEvent *node );
@@ -428,11 +430,12 @@ tMqiItem *findMqiItem( tMqiItem* anchor , MQLONG selector )
   {
     goto _door;
   }
-
+#if(0)
   if( anchor->next == NULL )
   {
     goto _door;
   }
+#endif
 
   item = anchor;
 
@@ -495,7 +498,7 @@ void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem )
 }
 
 /******************************************************************************/
-/* free node value                      */
+/* free node value                        */
 /******************************************************************************/
 void freeMqiItemValue( tMqiItem *item )
 {
@@ -506,7 +509,7 @@ void freeMqiItemValue( tMqiItem *item )
 }
 
 /******************************************************************************/
-/* add qmgr node                                                  */
+/* add qmgr node                                                        */
 /******************************************************************************/
 tQmgrNode* addQmgrNode( char* qmgrName )
 {
@@ -533,13 +536,19 @@ tQmgrNode* addQmgrNode( char* qmgrName )
   {
     goto _door;
   }
- 
-  node = (tQmgrNode*) malloc( sizeof(tQmgrNode) );
-  if( node == NULL )                  //
+
+  node = lastQmgrNode();
+  if( node == NULL )
+  {
+    goto _door;
+  }
+  node->next = (tQmgrNode*) malloc( sizeof(tQmgrNode) );
+  if( node->next == NULL )                   //
   {                                          //
     logger( LSTD_MEM_ALLOC_ERROR ) ;         //
     goto _door ;                             //
   }                                          //
+  node = node->next;
   sprintf( node->qmgr, qmgrName );
   node->next = NULL ;
   
@@ -549,7 +558,7 @@ tQmgrNode* addQmgrNode( char* qmgrName )
 }
 
 /******************************************************************************/
-/* find qmgr node                                                          */
+/* find qmgr node                                                             */
 /******************************************************************************/
 tQmgrNode* findQmgrNode( char* qmgrName )
 {
@@ -578,6 +587,31 @@ tQmgrNode* findQmgrNode( char* qmgrName )
   _door: 
   logFuncExit( ) ;
   return found;
+}
+
+/******************************************************************************/
+/* last qmgr node            */
+/******************************************************************************/
+tQmgrNode* lastQmgrNode( )
+{
+  logFuncCall( ) ;
+
+  tQmgrNode *last = _gEventList ;
+
+  if( last == NULL )
+  {
+    goto _door;
+  }
+
+  while( last->next )
+  {
+    last = last->next;
+  }
+
+  _door: 
+  logFuncExit( ) ;
+  return last;
+  
 }
 
 /******************************************************************************/
@@ -686,11 +720,15 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor )
       // ---------------------------------------------------
       // items to be moved in event list
       // ---------------------------------------------------
-      case MQIASY_REASON    :      // reason code 
-      case MQIA_APPL_TYPE   :      // application type
-      case MQCACF_APPL_NAME :      // application name
-      case MQCA_Q_NAME      :      // queue name
-      case MQIACF_REASON_QUALIFIER :
+      case MQIASY_REASON    :        // reason code 
+      case MQIA_APPL_TYPE   :        // application type
+      case MQCACF_APPL_NAME :        // application name
+      case MQCA_Q_NAME      :        // queue name
+      case MQIACF_REASON_QUALIFIER : //
+      case MQCACF_USER_IDENTIFIER  : // not authorized (connect)
+      case MQIACF_OPEN_OPTIONS     : // not authorized (open)
+      case MQCA_BASE_OBJECT_NAME   : // dlq reason
+      case MQIA_BASE_TYPE          : // dlq reason (combined with above)
       {
         moveMqiItem( mqiItem, anchor, event );
         break;
@@ -732,10 +770,10 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor )
         {                                             // if not start and
           if( !(qmgrNode->singleEvent) )              // not stop qmgr 
           {                                           // (probably DLQ message) 
-            qmgrNode->qmgrEvent = event;              // put event to the 
+            qmgrNode->singleEvent = event;            // put event to the 
             break;                                    // single event list
           }                                           //
-          addEventNode( qmgrNode->qmgrEvent, event ); //
+          addEventNode( qmgrNode->singleEvent, event ); //
           break;                                      //
         }                                             //
       }                                               //

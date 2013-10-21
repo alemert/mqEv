@@ -4,17 +4,18 @@
 /*   description:                                                             */
 /*     central mq module handling mq event monitoring                    */
 /*                                                                            */
-/*   monitored events :                                              */
+/*   monitored events :                                                    */
 /*     - Queue manager events (writing to SYSTEM.ADMIN.QMGR.EVENT)            */
 /*        - Local Events      LOCALEV(ENABLED)                    */
 /*        - Authority Events  AUTHOREV(ENABLED)                  */
 /*        - Inibit Evnets     INHIBTEV(ENABLED)              */
-/*                            */
+/*                                */
 /*                                                                            */
 /*                                                                            */
-/*   functions:                                              */
-/*    - initMq                                      */
-/*    - browseEvents                              */
+/*   functions:                                                  */
+/*    - initMq                                          */
+/*    - browseEvents                                  */
+/*    - printEventList                    */
 /*                                          */
 /******************************************************************************/
 
@@ -225,4 +226,15 @@ int browseEvents( )
 
   logFuncExit( ) ;
   return sysRc ;
+}
+
+/******************************************************************************/
+/* print events      */
+/******************************************************************************/
+void printEventList()
+{
+  tQmgrNode* qmgrEventNode = _gEventList ;
+
+  while() 
+  
 }
