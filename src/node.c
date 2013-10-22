@@ -47,68 +47,21 @@
 #include <mqtype.h>
 #include <mqbase.h>
 
+// ---------------------------------------------------------
+// local
+// ---------------------------------------------------------
+#define _MQEV_NODE_CPP_
+
+#include <node.h>
+
 /******************************************************************************/
 /*   D E F I N E S                                                            */
 /******************************************************************************/
 #define ITEM_STRING_LENGTH      64
 
 /******************************************************************************/
-/*   S T R U C T S   AND   TYPES         */
-/******************************************************************************/
-
-// ---------------------------------------------------------
-// mqi item
-// ---------------------------------------------------------
-typedef struct sMqiItem     tMqiItem    ;
-typedef union  uMqiItemVal  tMqiItemVal ;
-typedef enum   eMqiItemType tMqiItemType;
-
-union uMqiItemVal
-{
-  char *strVal;
-  int   intVal;
-};
-
-enum eMqiItemType
-{
-  UNKNOWN,
-  INTIGER,
-  STRING
-};
-
-struct sMqiItem
-{
-  MQLONG     selector;
-  tMqiItemVal   value   ;
-  tMqiItemType  type    ;
-  tMqiItem     *next    ;
-};
-
-// ---------------------------------------------------------
-// qmgr node
-// ---------------------------------------------------------
-typedef struct sQmgrNode tQmgrNode;
-typedef struct sEvent    tEvent   ;
-
-struct sQmgrNode
-{
-  char qmgr[MQ_Q_MGR_NAME_LENGTH+1];
-  tEvent    *qmgrEvent;
-  tEvent    *singleEvent;
-  tEvent    *doubleEvent;
-  tQmgrNode *next;
-};
-
-struct sEvent
-{
-  tMqiItem *item;
-  tEvent   *next;
-};
-
-/******************************************************************************/
 /*   G L O B A L S                                                            */
 /******************************************************************************/
-tQmgrNode *_gEventList = NULL;
 
 /******************************************************************************/
 /*   M A C R O S                                                              */
@@ -236,7 +189,7 @@ int bag2mqiNode( MQMD md, MQHBAG bag )
                                                          //
         setMqiItem( addMqiItem( anchor )  ,              //
                       selector            ,              //
-                      INTIGER             ,              //
+                      INTIGER_ITEM        ,              //
                       (tMqiItemVal)(int)iVal );          //
         break;                                           //
       }                                                  //
@@ -262,7 +215,7 @@ int bag2mqiNode( MQMD md, MQHBAG bag )
                                                          //
         setMqiItem( addMqiItem( anchor ),                // add a new item
                       selector          ,                //  with bag value
-                      STRING            ,                //
+                      STRING_ITEM       ,                //
                       (tMqiItemVal)(char*) itemStr );    //
         break;                                           //
       }                                                  //
@@ -338,7 +291,7 @@ tMqiItem* newMqiItem( )
 
   item->selector     = 0 ;
   item->value.strVal =  NULL ;
-  item->type         = UNKNOWN ;
+  item->type         = UNKNOWN_ITEM ;
   item->next         = NULL;
 
   _door:
@@ -481,7 +434,7 @@ void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem )
     if( (item->next) == deleteItem )
     {
       item->next = deleteItem->next; 
-      if( item->type == STRING )
+      if( item->type == STRING_ITEM )
       {
         free( item->value.strVal );
       }
@@ -502,7 +455,7 @@ void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem )
 /******************************************************************************/
 void freeMqiItemValue( tMqiItem *item )
 {
-  if( item->type == STRING )
+  if( item->type == STRING_ITEM )
   {
     free( item->value.strVal );
   }

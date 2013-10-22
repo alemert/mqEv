@@ -227,14 +227,3 @@ int browseEvents( )
   logFuncExit( ) ;
   return sysRc ;
 }
-
-/******************************************************************************/
-/* print events      */
-/******************************************************************************/
-void printEventList()
-{
-  tQmgrNode* qmgrEventNode = _gEventList ;
-
-  while() 
-  
-}
