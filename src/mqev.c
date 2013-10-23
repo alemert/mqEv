@@ -54,9 +54,13 @@
 /******************************************************************************/
 /*   G L O B A L S                                                            */
 /******************************************************************************/
-  MQHCONN _ghConn ;
-  MQOD    _godEvQueue = {MQOD_DEFAULT} ;
-  MQHOBJ  _gohEvQueue ;
+  MQHCONN _ghConn ;                      // global connection handle
+
+  MQOD    _godEvQueue={MQOD_DEFAULT};    // global object description and
+  MQHOBJ  _gohEvQueue;                   // object handler  for event queue
+
+  MQOD    _godAckQueue = {MQOD_DEFAULT}; // global object description and
+  MQHOBJ  _gohAckQueue;                  // object handler for acknowledge queue
 
 /******************************************************************************/
 /*   D E F I N E S                                                            */
@@ -102,40 +106,73 @@ int initMq( )
   }                                          //
                                              //
   // -------------------------------------------------------
-  // open queue
+  // open event queue
   // -------------------------------------------------------
-  char *evQueue = getStrAttr( "queue" );
-  if( evQueue == NULL )
-  {
-     evQueue = getIniStrValue( getIniNode("mq","qmgr","queue",NULL), "name" ); 
-  }
- 
-  if( evQueue == NULL )
-  {
-    logger( LSTD_UNKNOWN_CMDLN_ATTR, "queue" ) ;
-    logger( LSTD_UNKNOWN_INI_ATTR, "mq - qmgr - queue - name" );
-    logger( LSTD_GEN_ERR, __FUNCTION__ );
-    sysRc = 1 ; 
-    goto _door ; 
-  }
-
-  memset( _godEvQueue.ObjectName, (int) ' ', MQ_Q_NAME_LENGTH ) ;
-  memcpy( _godEvQueue.ObjectName, evQueue  , MQ_Q_NAME_LENGTH ) ;
-
-  sysRc = mqOpenObject( 
-              _ghConn                ,  // qmgr connection handle 
-              &_godEvQueue           ,  // event q object descriptor 
-              MQOO_INPUT_AS_Q_DEF    |  //   open object for get
-              MQOO_BROWSE            |  //   open for browse
-              MQOO_FAIL_IF_QUIESCING ,  //   open fails if qmgr is stopping
-              &_gohEvQueue          );  // object handle event queue
-
-  switch( sysRc )                       // rc mqopen
-  {                                     //
-    case MQRC_NONE : break ;            // open ok
-    default        : goto _door ;       // open failed
-  }                                     //
-      
+  char *evQueue = getStrAttr( "queue" );   // get event queue name from cmdln
+  if( evQueue == NULL )                    // if not found, get it from ini file
+  {                                        //
+    evQueue = getIniStrValue( getIniNode("mq","qmgr","evqueue",NULL), "name" ); 
+  }                                        //
+                                           //
+  if( evQueue == NULL )                    // if not found on command line and 
+  {                                        // not in ini file abort process
+    logger( LSTD_UNKNOWN_CMDLN_ATTR,"queue");
+    logger( LSTD_UNKNOWN_INI_ATTR  ,       //
+	   "mq - qmgr - evqueue - name" ); //
+    logger( LSTD_GEN_ERR, __FUNCTION__ );  //
+    sysRc = 1 ;                            //
+    goto _door;                            //
+  }                                        // set queue name in object 
+                                           //  description structure
+  memset(_godEvQueue.ObjectName,(int) ' ',MQ_Q_NAME_LENGTH);
+  memcpy(_godEvQueue.ObjectName,evQueue  ,MQ_Q_NAME_LENGTH);
+                                           //
+  sysRc = mqOpenObject(                    //
+              _ghConn                ,     // qmgr connection handle 
+              &_godEvQueue           ,     // event q object descriptor 
+              MQOO_INPUT_AS_Q_DEF    |     //   open object for get
+              MQOO_BROWSE            |     //   open for browse
+              MQOO_FAIL_IF_QUIESCING ,     //   open fails if qmgr is stopping
+              &_gohEvQueue          );     // object handle event queue
+                                           //
+  switch( sysRc )                          // rc mqopen
+  {                                        //
+    case MQRC_NONE : break;                // open ok
+    default        : goto _door ;          // open failed
+  }                                        //
+                                           //
+  // -------------------------------------------------------
+  // open acknowledge queue
+  // -------------------------------------------------------
+  char* ackQueue = getIniStrValue(         //
+                     getIniNode( "mq","qmgr","ackqueue",NULL), "name" ); 
+                                           //
+  if( ackQueue == NULL )                   // if acknowledge queue name not 
+  {                                        // found in ini file abort process
+    logger( LSTD_UNKNOWN_INI_ATTR,         //
+	   "mq - qmgr - ackqueue - name" );//
+    logger( LSTD_GEN_ERR, __FUNCTION__ );  //
+    sysRc = 1 ;                            //
+    goto _door;                            //
+  }                                        // set queue name in object 
+                                           //  description structure
+  memset(_godAckQueue.ObjectName,(int) ' ',MQ_Q_NAME_LENGTH);
+  memcpy(_godAckQueue.ObjectName,evQueue  ,MQ_Q_NAME_LENGTH);
+                                           //
+  sysRc = mqOpenObject(                    //
+              _ghConn                ,     // qmgr connection handle 
+              &_godAckQueue          ,     // event q object descriptor 
+              MQOO_INPUT_AS_Q_DEF    |     //   open object for get
+              MQOO_BROWSE            |     //   open for browse
+              MQOO_FAIL_IF_QUIESCING ,     //   open fails if qmgr is stopping
+              &_gohAckQueue         );     // object handle event queue
+                  //
+  switch( sysRc )                          // rc mqopen
+  {                                        //
+    case MQRC_NONE : break;                // open ok
+    default        : goto _door ;          // open failed
+  }                                        //
+                    //
   _door :
 
   logFuncExit( ) ;
@@ -194,10 +231,10 @@ int browseEvents( )
     switch( reason )                          //
     {                                         //
       case MQRC_NONE :                        //
-      {                              //
-        bag2mqiNode( evMsgDscr, evBag );      //
-        continue;                    //
-      }                        //
+      {                                       //
+        bag2mqiNode( &evMsgDscr, evBag );     //
+        continue;                             //
+      }                                       //
       case MQRC_NO_MSG_AVAILABLE :            //
       {                                       //
         continue;                             //
