@@ -9,14 +9,15 @@
 /*    - setMqiItem                                                            */
 /*    - findMqiItem                                                           */
 /*    - deleteMqiItem                                                        */
-/*    - freeMqiItemValue                                                */
+/*    - freeMqiItemValue                                                      */
 /*    - addQmgrNode                                                          */
-/*    - findQmgrNode                                                    */
-/*    - lastQmgrNode              */
-/*    - newEventNode                            */
-/*    - addEventNode                          */
-/*    - item2event                                        */
-/*    - moveMqiItem                            */
+/*    - findQmgrNode                                                        */
+/*    - lastQmgrNode                  */
+/*    - newEventNode                                */
+/*    - addEventNode                              */
+/*    - item2event                                            */
+/*    - moveMqiItem                                */
+/*    - getMsgIdPair                    */
 /*                                                              */
 /******************************************************************************/
 
@@ -88,7 +89,7 @@ tQmgrNode* lastQmgrNode( );
 tEvent* newEventNode();
 tEvent* addEventNode( tEvent *anchor, tEvent *node );
 
-void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor );
+void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd );
 void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event );
 
 
@@ -97,7 +98,7 @@ void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event );
 /*   F U N C T I O N S                                                        */
 /*                                                                            */
 /******************************************************************************/
-int bag2mqiNode( MQMD md, MQHBAG bag )
+int bag2mqiNode( PMQMD pmd, MQHBAG bag )
 {
   MQLONG itemCount;
   MQLONG itemType ;
@@ -265,7 +266,7 @@ int bag2mqiNode( MQMD md, MQHBAG bag )
   freeMqiItemValue( qmgrItem );            //
   deleteMqiItem( anchor, qmgrItem );                     //
                                                          //
-  item2event( qmgrNode, anchor );                      //
+  item2event( qmgrNode, anchor, pmd );                   //
                                                          //
   free(anchor);
   _door:
@@ -543,7 +544,7 @@ tQmgrNode* findQmgrNode( char* qmgrName )
 }
 
 /******************************************************************************/
-/* last qmgr node            */
+/* last qmgr node                    */
 /******************************************************************************/
 tQmgrNode* lastQmgrNode( )
 {
@@ -568,7 +569,7 @@ tQmgrNode* lastQmgrNode( )
 }
 
 /******************************************************************************/
-/* new event node                                  */
+/* new event node                                    */
 /******************************************************************************/
 tEvent* newEventNode()
 {
@@ -576,7 +577,7 @@ tEvent* newEventNode()
   tEvent *event; 
 
   event = (tEvent*) malloc( sizeof(tEvent));
-  if( event == NULL )                      //
+  if( event == NULL )                        //
   {                                          //
     logger( LSTD_MEM_ALLOC_ERROR ) ;         //
     goto _door ;                             //
@@ -591,7 +592,7 @@ tEvent* newEventNode()
 }
 
 /******************************************************************************/
-/* add event node                    */
+/* add event node                      */
 /******************************************************************************/
 tEvent* addEventNode( tEvent *anchor, tEvent *node )
 {
@@ -612,9 +613,9 @@ tEvent* addEventNode( tEvent *anchor, tEvent *node )
 }
 
 /******************************************************************************/
-/* item to event                */
+/* item to event                  */
 /******************************************************************************/
-void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor )
+void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
 {
   logFuncCall( ) ;
   
@@ -623,7 +624,7 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor )
   tMqiItem *tmpItem;
 
   tEvent   *event  = newEventNode();
-  if( event == NULL )                      //
+  if( event == NULL )                        //
   {                                          //
     goto _door ;                             //
   }                                          //
@@ -636,6 +637,8 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor )
     goto _door;  
   }
 
+  event->pmd = (PMQMD) malloc( sizeof(MQMD) );
+  memcpy( event->pmd, pmd, sizeof(MQMD) );
   mqiItem = anchor->next;
    
   while( mqiItem )
@@ -745,7 +748,7 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor )
 
 
 /******************************************************************************/
-/* move mqi item               */
+/* move mqi item                 */
 /*    items will be moved from item list to event list       */
 /******************************************************************************/
 void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event )
@@ -777,4 +780,18 @@ void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event )
   logFuncExit( ) ;
   return;
 }
-        
+
+/******************************************************************************/
+/*  get message id pairs            */
+/******************************************************************************/
+PMQBYTE24 getMsgIdPair()
+{
+  tQmgrNode *qmgrNode = _gEventList ;
+  tEvent    *event    ;
+ 
+  while( qmgrNode )
+  {
+    event = qmgrNode->qmgrEvent ; 
+    qmgrNode = qmgrNode->next;
+  }
+}
