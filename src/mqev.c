@@ -4,18 +4,19 @@
 /*   description:                                                             */
 /*     central mq module handling mq event monitoring                    */
 /*                                                                            */
-/*   monitored events :                                                    */
+/*   monitored events :                                                       */
 /*     - Queue manager events (writing to SYSTEM.ADMIN.QMGR.EVENT)            */
 /*        - Local Events      LOCALEV(ENABLED)                    */
 /*        - Authority Events  AUTHOREV(ENABLED)                  */
 /*        - Inibit Evnets     INHIBTEV(ENABLED)              */
-/*                                */
+/*                                  */
 /*                                                                            */
 /*                                                                            */
-/*   functions:                                                  */
-/*    - initMq                                          */
-/*    - browseEvents                                  */
-/*    - printEventList                    */
+/*   functions:                                                      */
+/*    - initMq                                              */
+/*    - browseEvents                                      */
+/*    - printEventList                        */
+/*    - handleDoneEvents                    */
 /*                                          */
 /******************************************************************************/
 
@@ -73,6 +74,7 @@
 /******************************************************************************/
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
+int moveMessages( PMQBYTE24 *msgIdArray, int getQueue, int putQueue );
 
 /******************************************************************************/
 /*                                                                            */
@@ -81,7 +83,7 @@
 /******************************************************************************/
 
 /******************************************************************************/
-/* init mq connection                              */
+/* init mq connection                                          */
 /******************************************************************************/
 int initMq( )
 {
@@ -166,13 +168,13 @@ int initMq( )
               MQOO_BROWSE            |     //   open for browse
               MQOO_FAIL_IF_QUIESCING ,     //   open fails if qmgr is stopping
               &_gohAckQueue         );     // object handle event queue
-                  //
+                                //
   switch( sysRc )                          // rc mqopen
   {                                        //
     case MQRC_NONE : break;                // open ok
     default        : goto _door ;          // open failed
   }                                        //
-                          //
+                                  //
   _door :
 
   logFuncExit( ) ;
@@ -181,7 +183,7 @@ int initMq( )
 }
 
 /******************************************************************************/
-/* browse events            */
+/* browse events                    */
 /******************************************************************************/
 int browseEvents( )
 {
@@ -265,18 +267,43 @@ int browseEvents( )
 }
 
 /******************************************************************************/
-/*  match events      */
+/*  handle done events                    */
 /******************************************************************************/
-int matchEvents()
+int handleDoneEvents()
 {
-
   logFuncCall( ) ;
   int sysRc = 0 ;
 
   PMQBYTE24 msgIdPair ;
 
   msgIdPair = getMsgIdPair();
+  
+  moveMessages( msgIdPair, COLLECTION_QUEUE, DONE_QUEUE );
 
+  logFuncExit( ) ;
+  return sysRc ;
+}
+
+/******************************************************************************/
+/*   move messages                        */
+/******************************************************************************/
+int moveMessages( PMQBYTE24 *msgIdArray, int getQueue, int putQueue )
+{
+  logFuncCall( ) ;
+
+  PMQBYTE24 *msgId;
+  int sysRc = 0 ;
+
+  // mqBegin();
+
+  msgId = msgIdArray ;
+  while( *msgId != 0 )
+  {
+    // get
+    // put
+  }
+ 
+  // mqCommit();
   logFuncExit( ) ;
   return sysRc ;
 }
