@@ -285,7 +285,7 @@ int handleDoneEvents()
 }
 
 /******************************************************************************/
-/*   move messages                        */
+/*   move messages                              */
 /******************************************************************************/
 int moveMessages( PMQBYTE24 *msgIdArray, int getQueue, int putQueue )
 {
@@ -294,7 +294,12 @@ int moveMessages( PMQBYTE24 *msgIdArray, int getQueue, int putQueue )
   PMQBYTE24 *msgId;
   int sysRc = 0 ;
 
-  // mqBegin();
+  sysRc = mqBegin( _ghConn );                 // qmgr connection handle 
+  switch( sysRc )
+  {
+    case MQRC_NONE : break;
+    default        : goto _door;
+  }
 
   msgId = msgIdArray ;
   while( *msgId != 0 )
@@ -303,7 +308,14 @@ int moveMessages( PMQBYTE24 *msgIdArray, int getQueue, int putQueue )
     // put
   }
  
-  // mqCommit();
+  mqCommit( _ghConn );
+  switch( sysRc )
+  {
+    case MQRC_NONE : break;
+    default        : goto _door;
+  }
+
+  _door:
   logFuncExit( ) ;
   return sysRc ;
 }

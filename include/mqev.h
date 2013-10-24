@@ -36,5 +36,5 @@
 int initMq( );
 int browseEvents( );
 void printEventList();
-int matchEvents();
+int handleDoneEvents();
 
