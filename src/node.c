@@ -8,17 +8,18 @@
 /*    - lastMqiItem                                                           */
 /*    - setMqiItem                                                            */
 /*    - findMqiItem                                                           */
-/*    - deleteMqiItem                                                        */
+/*    - deleteMqiItem                                                         */
 /*    - freeMqiItemValue                                                      */
-/*    - addQmgrNode                                                          */
-/*    - findQmgrNode                                                        */
-/*    - lastQmgrNode                  */
-/*    - newEventNode                                */
-/*    - addEventNode                              */
-/*    - item2event                                            */
-/*    - moveMqiItem                                */
-/*    - getMsgIdPair                    */
-/*                                                              */
+/*    - addQmgrNode                                                           */
+/*    - findQmgrNode                                                          */
+/*    - lastQmgrNode                                        */
+/*    - newEventNode                                          */
+/*    - addEventNode                                        */
+/*    - item2event                                                      */
+/*    - moveMqiItem                                          */
+/*    - getMsgIdPair                              */
+/*    -  matchEventReason                             */
+/*                                                                    */
 /******************************************************************************/
 
 /******************************************************************************/
@@ -92,6 +93,7 @@ tEvent* addEventNode( tEvent *anchor, tEvent *node );
 void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd );
 void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event );
 
+MQLONG matchEventReason( MQLONG reason );
 
 /******************************************************************************/
 /*                                                                            */
@@ -371,7 +373,7 @@ tMqiItem *setMqiItem( tMqiItem* item,
 }
 
 /******************************************************************************/
-/* set item                                                                   */
+/* find mqi item                                                              */
 /******************************************************************************/
 tMqiItem *findMqiItem( tMqiItem* anchor , MQLONG selector )
 {
@@ -410,7 +412,7 @@ tMqiItem *findMqiItem( tMqiItem* anchor , MQLONG selector )
 }
 
 /******************************************************************************/
-/* delete item                              */
+/* delete item                                                  */
 /******************************************************************************/
 void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem )
 {
@@ -452,7 +454,7 @@ void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem )
 }
 
 /******************************************************************************/
-/* free node value                        */
+/* free node value                                    */
 /******************************************************************************/
 void freeMqiItemValue( tMqiItem *item )
 {
@@ -463,7 +465,7 @@ void freeMqiItemValue( tMqiItem *item )
 }
 
 /******************************************************************************/
-/* add qmgr node                                                        */
+/* add qmgr node                                                              */
 /******************************************************************************/
 tQmgrNode* addQmgrNode( char* qmgrName )
 {
@@ -544,7 +546,7 @@ tQmgrNode* findQmgrNode( char* qmgrName )
 }
 
 /******************************************************************************/
-/* last qmgr node                    */
+/* last qmgr node                                */
 /******************************************************************************/
 tQmgrNode* lastQmgrNode( )
 {
@@ -569,7 +571,7 @@ tQmgrNode* lastQmgrNode( )
 }
 
 /******************************************************************************/
-/* new event node                                    */
+/* new event node                                              */
 /******************************************************************************/
 tEvent* newEventNode()
 {
@@ -592,7 +594,7 @@ tEvent* newEventNode()
 }
 
 /******************************************************************************/
-/* add event node                      */
+/* add event node                                  */
 /******************************************************************************/
 tEvent* addEventNode( tEvent *anchor, tEvent *node )
 {
@@ -613,7 +615,7 @@ tEvent* addEventNode( tEvent *anchor, tEvent *node )
 }
 
 /******************************************************************************/
-/* item to event                  */
+/* item to event                              */
 /******************************************************************************/
 void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
 {
@@ -748,7 +750,9 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
 
 
 /******************************************************************************/
-/* move mqi item                 */
+/*  move mqi item                                     */
+/*                                            */
+/*    description:                      */
 /*    items will be moved from item list to event list       */
 /******************************************************************************/
 void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event )
@@ -782,16 +786,84 @@ void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event )
 }
 
 /******************************************************************************/
-/*  get message id pairs            */
+/*  get message id pairs              */
 /******************************************************************************/
 PMQBYTE24 getMsgIdPair()
 {
-  tQmgrNode *qmgrNode = _gEventList ;
-  tEvent    *event    ;
- 
-  while( qmgrNode )
+  tQmgrNode *qmgrNode  = _gEventList; // go through all queue manager
+  tEvent    *origEvent ;              // for each queue manager check all queues
+  tEvent    *matchEvent;              // for each queue manager check all queues
+  tMqiItem  *origItem  ;              // original item
+  tMqiItem  *matchItem ;              // item that matches original item
+                                      //
+  // -------------------------------------------------------  
+  // main loop, check all queue manager
+  // -------------------------------------------------------  
+  while( qmgrNode )                           // check all queue manager
+  {                                           //
+    origEvent = qmgrNode->qmgrEvent;          // get event list for qmgr
+    origItem = findMqiItem( origEvent->item,  //
+			    MQIASY_REASON );  //
+    if( !origItem )                           // original item does not include MQIASY_REASON
+    {                                         //
+      logger( LEVN_EVENT_ITEM_NOT_EXISTS,     //
+	      "MQIASY_REASON"         ) ;     //
+      goto _door;                        //
+    }                                         //
+    if( origItem->type != INTIGER_ITEM )      //
+    {                                         //
+    }                                         //
+    matchItem = matchEventReason( origItem->value.intVal ); 
+    if( matchItem == 0 )               //
+    {                                        //
+      qmgrNode = qmgrNode->next;      //
+      continue;                          //
+    }                                        //
+    matchEvent = origEvent->next;      //
+    while( matchEvent )                  //
+    {                                         //
+      matchItem=findMqiItem( origEvent->item, //
+                             MQIASY_REASON ); //
+      if( !matchItem )           //
+      {                            //
+	matchEvent = matchEvent->next;      //
+        continue;               //
+      }                //
+    }                        //
+    qmgrNode = qmgrNode->next;      //
+  }                    //
+                                  //
+  _door:            //
+      return ;
+
+
+}
+
+/******************************************************************************/
+/*  match event reasons                      */
+/*                                                      */
+/*    description:                                            */
+/*      search a start selector to some stop selector                      */
+/*      f.e. find start qmgr selector to stop qmgr selector                   */
+/******************************************************************************/
+MQLONG matchEventReason( MQLONG reason )
+{
+  MQLONG match = 0 ;
+
+  switch( reason )
   {
-    event = qmgrNode->qmgrEvent ; 
-    qmgrNode = qmgrNode->next;
+    // -----------------------------------------------------
+    // queue manager stop / start
+    // -----------------------------------------------------
+    case MQRC_Q_MGR_NOT_ACTIVE:   // MQIASY_REASON
+    case MQRQ_Q_MGR_STOPPING  :   // MQIACF_REASON_QUALIFIER
+    case MQRQ_Q_MGR_QUIESCING :   // MQIACF_REASON_QUALIFIER
+    {
+      match = MQRC_Q_MGR_ACTIVE;  // MQIASY_REASON
+      break;
+    }
+    default : break;
   }
+
+  return match;
 }

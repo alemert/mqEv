@@ -102,8 +102,8 @@ void printEventList( tEvent *eventList )
   while( event )
   {
     printf("    ----------------------------------------\n");
-    printMD( event->pmd );
     printEvent( event->item );
+    printMD( event->pmd );
     printf("    ----------------------------------------\n");
     event = event->next ;
   }
@@ -123,6 +123,7 @@ void printEvent( tMqiItem *_item )
     switch( item->selector )
     {
       case MQIACF_OPEN_OPTIONS : break;
+      case MQIA_APPL_TYPE      : break;
       default :
       {
         printf( "    %-25.25s  ", mqSelector2str( item->selector ) );
@@ -161,7 +162,6 @@ void printMD( PMQMD pmd )
 	        printf( format, value );        \
 	        printf( "\n" );                 \
 	      }
-    
 
 //printMDln("%-4.4s"  ,"Structure identifier",pmd->StrucId       );           
 //printMDln("%-25.25s","Structure version"   ,(char*)mqmdVer2str(pmd->Version));
@@ -177,14 +177,14 @@ void printMD( PMQMD pmd )
   printMDln("%s"      ,"Message id",mqbyte2str(pmd->MsgId,24));
 //printMDln("%s"      ,"Correlation id" ,mqbyte2str(pmd->CorrelId,24));
 //printMDln("%9.9d"   ,"Backout counter",pmd->BackoutCount  );
-  printMDln("%-48.48s","Reply queue"    ,pmd->ReplyToQ      );
-  printMDln("%-48.48s","Reply qmgr"     ,pmd->ReplyToQMgr   );
+//printMDln("%-48.48s","Reply queue"    ,pmd->ReplyToQ      );
+//printMDln("%-48.48s","Reply qmgr"     ,pmd->ReplyToQMgr   );
 //printMDln("%-12.12s","User identifier",pmd->UserIdentifier);
 //printMDln("%s"      ,"Account token"  ,mqbyte2str(pmd->AccountingToken,32));
 //printMDln("%-32.32s","Application identity",pmd->ApplIdentityData );
-  printMDln("%-25.25s","Put Type"  ,(char*)mqPutApplType2str(pmd->PutApplType));
+//printMDln("%-25.25s","Put Type"  ,(char*)mqPutApplType2str(pmd->PutApplType));
 //printMDln("%-28.28s","Application name"    ,pmd->PutApplName   );       
-  printMDln("%-8.8s"  ,"Put Date"            ,pmd->PutDate       );
+  printMDln("%-8.8s"  ,"Put Date / Time"     ,pmd->PutDate       );
   printMDln("%-8.8s"  ,"Put time"            ,pmd->PutTime       );
 //printMDln("%-4.4s"  ,"Application origin"  ,pmd->ApplOriginData);
 

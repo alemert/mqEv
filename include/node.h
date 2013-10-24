@@ -78,6 +78,7 @@ struct sQmgrNode
 struct sEvent
 {
   tMqiItem *item;
+  PMQMD     pmd ;
   tEvent   *next;
 };
 
@@ -93,4 +94,5 @@ struct sEvent
 /******************************************************************************/
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
-int bag2mqiNode( MQMD md, MQHBAG bag );
+int bag2mqiNode( PMQMD md, MQHBAG bag );
+PMQBYTE24 getMsgIdPair();

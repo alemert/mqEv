@@ -172,14 +172,13 @@ int initMq( )
     case MQRC_NONE : break;                // open ok
     default        : goto _door ;          // open failed
   }                                        //
-                    //
+                          //
   _door :
 
   logFuncExit( ) ;
 
   return sysRc ;
 }
-
 
 /******************************************************************************/
 /* browse events            */
@@ -260,6 +259,23 @@ int browseEvents( )
   }                                           //
 
   _door:
+
+  logFuncExit( ) ;
+  return sysRc ;
+}
+
+/******************************************************************************/
+/*  match events      */
+/******************************************************************************/
+int matchEvents()
+{
+
+  logFuncCall( ) ;
+  int sysRc = 0 ;
+
+  PMQBYTE24 msgIdPair ;
+
+  msgIdPair = getMsgIdPair();
 
   logFuncExit( ) ;
   return sysRc ;
