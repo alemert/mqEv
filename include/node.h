@@ -95,4 +95,4 @@ struct sEvent
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
 int bag2mqiNode( PMQMD md, MQHBAG bag );
-PMQBYTE24 getMsgIdPair();
+PMQBYTE24* getMsgIdPair();

@@ -795,7 +795,7 @@ void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event )
 /******************************************************************************/
 /*  get message id pairs                  */
 /******************************************************************************/
-PMQBYTE24 getMsgIdPair()
+PMQBYTE24* getMsgIdPair()
 {
   logFuncCall( ) ;
 
@@ -889,7 +889,7 @@ PMQBYTE24 getMsgIdPair()
                                               //
   _door:                                      //
   logFuncExit( ) ;
-  return *_gMsgIdPair ;
+  return _gMsgIdPair ;
 
 }
 
