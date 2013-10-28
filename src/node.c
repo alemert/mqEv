@@ -66,7 +66,7 @@
 /******************************************************************************/
 /*   G L O B A L S                                                            */
 /******************************************************************************/
-PMQBYTE24 _gMsgIdPair[MSGID_PAIR_AMOUNT+1];
+MQBYTE24 _gMsgIdPair[MSGID_PAIR_AMOUNT+1];
 
 /******************************************************************************/
 /*   M A C R O S                                                              */
@@ -461,7 +461,7 @@ void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem )
 }
 
 /******************************************************************************/
-/* free node value                                                    */
+/* free node value                                                            */
 /******************************************************************************/
 void freeMqiItemValue( tMqiItem *item )
 {
@@ -578,7 +578,7 @@ tQmgrNode* lastQmgrNode( )
 }
 
 /******************************************************************************/
-/* new event node                                                          */
+/* new event node                                                             */
 /******************************************************************************/
 tEvent* newEventNode()
 {
@@ -601,7 +601,7 @@ tEvent* newEventNode()
 }
 
 /******************************************************************************/
-/* add event node                                              */
+/* add event node                                                     */
 /******************************************************************************/
 tEvent* addEventNode( tEvent *anchor, tEvent *node )
 {
@@ -622,7 +622,7 @@ tEvent* addEventNode( tEvent *anchor, tEvent *node )
 }
 
 /******************************************************************************/
-/* item to event                                                */
+/* item to event                                                       */
 /******************************************************************************/
 void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
 {
@@ -742,7 +742,7 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
           break;                                      //
         }                                             //
       }                                               //
-      break;                                    // switch( eventList )
+      break;                                          // switch( eventList )
     }                                                 //
     default :                                         //
     {                                                 //
@@ -757,9 +757,9 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
 
 
 /******************************************************************************/
-/*  move mqi item                                             */
-/*                                                        */
-/*    description:                              */
+/*  move mqi item                                                    */
+/*                                                               */
+/*    description:                                     */
 /*    items will be moved from item list to event list       */
 /******************************************************************************/
 void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event )
@@ -793,9 +793,9 @@ void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event )
 }
 
 /******************************************************************************/
-/*  get message id pairs                  */
+/*  get message id pairs                               */
 /******************************************************************************/
-PMQBYTE24* getMsgIdPair()
+PMQBYTE24 getMsgIdPair()
 {
   logFuncCall( ) ;
 
@@ -811,16 +811,23 @@ PMQBYTE24* getMsgIdPair()
   // -------------------------------------------------------  
   // main loop, check all queue manager
   // -------------------------------------------------------  
+#if(0)
+  for( msgIdCnt=0; msgIdCnt<MSGID_PAIR_AMOUNT; msgIdCnt++ )
+  {
+    memcpy( _gMsgIdPair[msgIdCnt],' ',sizeof(MQBYTE24));
+  }
+#endif
+  memcpy( _gMsgIdPair, MQMI_NONE , MSGID_PAIR_AMOUNT );
+
   msgIdCnt = 0;
-  memset( _gMsgIdPair, 0, MSGID_PAIR_AMOUNT );//
-                    //
+                            //
   while( qmgrNode )                           // check all queue manager
   {                                           //
     // -----------------------------------------------------  
     // handle original event
     // -----------------------------------------------------  
-    origEvent = qmgrNode->qmgrEvent;          // get event list for qmgr
-                                              //
+    origEvent = qmgrNode->qmgrEvent;          // get event list for every
+                                              //  queue manager
     // -----------------------------------------------------  
     // go through all double events for actual queue manager
     // -----------------------------------------------------  
@@ -873,15 +880,19 @@ PMQBYTE24* getMsgIdPair()
       // ---------------------------------------------------  
       if( matchEvent )                        //
       {                                       //
-        _gMsgIdPair[msgIdCnt]  =&(origEvent->pmd->MsgId) ;
-        _gMsgIdPair[msgIdCnt+1]=&(matchEvent->pmd->MsgId);
+        memcpy( _gMsgIdPair[msgIdCnt]  ,      //
+	        origEvent->pmd->MsgId  ,      //
+	        sizeof(MQBYTE24)      );      //
+        memcpy( _gMsgIdPair[msgIdCnt+1],      //
+	        matchEvent->pmd->MsgId ,      //
+	        sizeof(MQBYTE24)      );      //
         msgIdCnt += 2;                        //
         if( msgIdCnt > MSGID_PAIR_AMOUNT-1 )  //
-        {                                //
-  	  goto _door;                        //
-        }                                //
-      }                                      //
-      origEvent = origEvent->next;      //
+        {                                     //
+  	  goto _door;                         //
+        }                                     //
+      }                                       //
+      origEvent = origEvent->next;            //
     }                                         //
                                               //
     qmgrNode = qmgrNode->next;                //
@@ -894,7 +905,7 @@ PMQBYTE24* getMsgIdPair()
 }
 
 /******************************************************************************/
-/*  match event reason                                               */
+/*  match event reason                                                        */
 /*                                                                            */
 /*    description:                                                            */
 /*      search a start selector to some stop selector                         */
