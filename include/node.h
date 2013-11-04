@@ -96,3 +96,8 @@ struct sEvent
 /******************************************************************************/
 int bag2mqiNode( PMQMD md, MQHBAG bag );
 PMQBYTE24 getMsgIdPair();
+
+
+tMqiItem* findMqiItem( tMqiItem* anchor , MQLONG selector );
+//void freeMqiItemValue( tMqiItem *item );
+void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem );

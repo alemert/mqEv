@@ -81,6 +81,12 @@ int main(int argc, const char* argv[] )
     goto _door;
   }
 
+  if(!getFlagAttr("html"))
+  {
+    sysRc = htmlWorker() ;
+    goto _door;
+  }
+
   _door :
 
   return sysRc ;

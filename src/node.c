@@ -82,9 +82,9 @@ tMqiItem* setMqiItem( tMqiItem* item,
                       MQLONG selector, 
                       tMqiItemType type, 
                       tMqiItemVal val );
-tMqiItem* findMqiItem( tMqiItem* anchor , MQLONG selector );
+//tMqiItem* findMqiItem( tMqiItem* anchor , MQLONG selector );
 void freeMqiItemValue( tMqiItem *item );
-void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem );
+//void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem );
 
 tQmgrNode* addQmgrNode( char* qmgrName );
 tQmgrNode* findQmgrNode( char* qmgrName );
@@ -834,7 +834,7 @@ PMQBYTE24 getMsgIdPair()
     while( origEvent )                        // go through all double events
     {                                         //
       origItem = findMqiItem( origEvent->item,// find item with a reason
-  			    MQIASY_REASON );  //
+  			      MQIASY_REASON );//
       if( !origItem )                         // original item does not include 
       {                                       // MQIASY_REASON, which should not
         logger( LEVN_EVENT_ITEM_NOT_EXIST ,   // appear. Still it would cause 
