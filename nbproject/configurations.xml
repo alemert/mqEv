@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="89">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df root="." name="mqEv">
+      <df name="include">
+        <df name="msgcat">
+          <in>lgmqm.h</in>
+          <in>lgstd.h</in>
+        </df>
+        <in>ctl.h</in>
+        <in>dumper.h</in>
+        <in>inihnd.h</in>
+        <in>main.h</in>
+        <in>mqbase.h</in>
+        <in>mqdump.h</in>
+        <in>mqev.h</in>
+        <in>mqreason.h</in>
+        <in>mqtype.h</in>
+        <in>node.h</in>
+        <in>rename_for_new_project.h</in>
+        <in>worker.h</in>
+      </df>
+      <df name="src">
+        <in>dumper.c</in>
+        <in>main.c</in>
+        <in>mqev.c</in>
+        <in>node.c</in>
+        <in>rename_for_new_project.c</in>
+        <in>worker.c</in>
+      </df>
+      <df name="test">
+        <df name="include">
+          <in>tutl.h</in>
+        </df>
+        <df name="src">
+          <in>t_main_000.c</in>
+          <in>t_template_000.c</in>
+        </df>
+      </df>
+      <df name="var">
+        <df name="cmdl">
+          <df name="src">
+            <in>cmdln.c</in>
+            <in>cmdln.h</in>
+          </df>
+        </df>
+        <df name="vers">
+          <df name="src">
+            <in>ver4bin.c</in>
+          </df>
+        </df>
+      </df>
+    </df>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+      <itemPath>Makefile</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <sourceFolderFilter>^(nbproject)$</sourceFolderFilter>
+  <sourceRootList>
+    <Elem>.</Elem>
+  </sourceRootList>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
+        <compilerSet>default</compilerSet>
+        <dependencyChecking>false</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
+      </toolsSet>
+      <codeAssistance>
+      </codeAssistance>
+      <makefileType>
+        <makeTool>
+          <buildCommandWorkingDir>.</buildCommandWorkingDir>
+          <buildCommand>${MAKE} -f Makefile</buildCommand>
+          <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
+          <executablePath>bin/gcc/64/Linux.x86_64/mqev</executablePath>
+        </makeTool>
+        <requiredProjects>
+          <makeArtifact PL="../mqUtil"
+                        CT="2"
+                        CN="Debug"
+                        AC="true"
+                        BL="false"
+                        WD="../mqUtil"
+                        BC="${MAKE}  -f Makefile CONF=Debug"
+                        CC="${MAKE}  -f Makefile CONF=Debug clean"
+                        OP="${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libmqUtil.${CND_DLIB_EXT}">
+          </makeArtifact>
+        </requiredProjects>
+      </makefileType>
+      <folder path="mqEv/test">
+        <cTool>
+          <incDir>
+            <pElem>.</pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="mqEv/var">
+        <cTool>
+          <incDir>
+            <pElem>include</pElem>
+            <pElem>include/msgcat</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="mqEv/var/cmdl">
+        <cTool>
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="mqEv/var/vers">
+        <cTool>
+          <incDir>
+            <pElem>var/vers</pElem>
+            <pElem>.</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <item path="include/ctl.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/dumper.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/inihnd.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/main.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/mqbase.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/mqdump.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/mqev.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/mqreason.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/mqtype.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/msgcat/lgmqm.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/msgcat/lgstd.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/node.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rename_for_new_project.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/worker.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/dumper.c" ex="false" tool="0" flavor2="0">
+        <cTool>
+          <incDir>
+            <pElem>include</pElem>
+            <pElem>include/msgcat</pElem>
+            <pElem>var/cmdl/src</pElem>
+            <pElem>.</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/main.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>include</pElem>
+            <pElem>include/msgcat</pElem>
+            <pElem>var/cmdl/src</pElem>
+            <pElem>.</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/mqev.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>include</pElem>
+            <pElem>include/msgcat</pElem>
+            <pElem>var/cmdl/src</pElem>
+            <pElem>.</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/node.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>include</pElem>
+            <pElem>include/msgcat</pElem>
+            <pElem>var/cmdl/src</pElem>
+            <pElem>.</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/rename_for_new_project.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>.</pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/worker.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>include</pElem>
+            <pElem>include/msgcat</pElem>
+            <pElem>var/cmdl/src</pElem>
+            <pElem>.</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="test/include/tutl.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="test/src/t_main_000.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="test/src/t_template_000.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="var/cmdl/src/cmdln.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="var/cmdl/src/cmdln.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="var/vers/src/ver4bin.c" ex="false" tool="0" flavor2="0">
+      </item>
+    </conf>
+  </confs>
+</configurationDescriptor>

@@ -30,4 +30,4 @@
 /******************************************************************************/
 
 void printAllEventList();
-void printAllEventTable();
+int printAllEventTable( char* dir );

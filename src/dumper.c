@@ -2,18 +2,18 @@
 /*                     M Q   E V E N T   -   D U M P E R                      */
 /*                                                                            */
 /*    functions:                                                              */
-/*      - printAllEventList                                                  */
-/*      - printQmgrEventList                                            */
-/*      - printEventList                                                */
-/*      - printEvent                              */
-/*      - printEventItem                        */
-/*      - printMD                                                */
-/*      - mqbyte2str                                              */
-/*      - printAllEventTable                                */
-/*      - printQmgrEventTable                          */
-/*      - printEventTopLine                    */
-/*      - printEventTableLine            */
-/*                                      */
+/*      - printAllEventList                                                   */
+/*      - printQmgrEventList                                                  */
+/*      - printEventList                                                      */
+/*      - printEvent                                      */
+/*      - getEventItem                                    */
+/*      - printMD                                                      */
+/*      - mqbyte2str                                                    */
+/*      - printAllEventTable                                      */
+/*      - printQmgrEventTable                                */
+/*      - fPrintEventTopLine                                */
+/*      - printEventTableLine                */
+/*                                            */
 /******************************************************************************/
 
 /******************************************************************************/
@@ -25,6 +25,8 @@
 // ---------------------------------------------------------
 #include <stdio.h>
 #include <stdarg.h>
+#include <limits.h>
+#include <string.h>
 
 // ---------------------------------------------------------
 // mq
@@ -36,17 +38,21 @@
 // ---------------------------------------------------------
 // own 
 // ---------------------------------------------------------
+#include <ctl.h>
+#include <lgstd.h>
 #include <mqtype.h>
 
 // ---------------------------------------------------------
 // local
 // ---------------------------------------------------------
+#include <dumper.h>
 #include <node.h>
 
 /******************************************************************************/
 /*   G L O B A L S                                                            */
 /******************************************************************************/
-char _gBuff[128];
+#define MQEV_GLOBAL_BUFFER_LNG 1024
+char _gBuff[MQEV_GLOBAL_BUFFER_LNG];
 
 /******************************************************************************/
 /*   D E F I N E S                                                            */
@@ -55,6 +61,11 @@ char _gBuff[128];
 /******************************************************************************/
 /*   M A C R O S                                                              */
 /******************************************************************************/
+#define printEventTopLine( fp, ... )   \
+       fPrintEventTopLine( fp ,        \
+                         ( sizeof( (char*[]) {NULL,##__VA_ARGS__} ) \
+                         / sizeof(char*)-1),                        \
+                           ##__VA_ARGS__                            )
 
 /******************************************************************************/
 /*   P R O T O T Y P E S                                                      */
@@ -62,11 +73,11 @@ char _gBuff[128];
 void printQmgrEventList( tQmgrNode* qmgrNode );
 void printEventList( tEvent *eventList );
 void printEvent( FILE* fp, tMqiItem *_item );
-void printEventItem( FILE *fp, tMqiItem *_item );
+const char* getEventItem( tMqiItem *_item );
 void printMD( PMQMD pmd );
 const char* mqbyte2str( PMQBYTE value, MQLONG lng );
-void printQmgrEventTable( FILE* fp, tQmgrNode* qmgrEventNode );
-void printEventTopLine( FILE *fp, int nr, ... );
+int  printQmgrEventTable( const char* dir, tQmgrNode* qmgrEventNode );
+void fPrintEventTopLine( FILE *fp, int nr, ... );
 void printEventTableLine( FILE* fp, tEvent* eventList );
 
 /******************************************************************************/
@@ -80,6 +91,8 @@ void printEventTableLine( FILE* fp, tEvent* eventList );
 /******************************************************************************/
 void printAllEventList()
 {
+  logFuncCall( ) ;
+
   tQmgrNode* qmgrEventNode = _gEventList ;
 
   while( qmgrEventNode ) 
@@ -87,6 +100,8 @@ void printAllEventList()
     printQmgrEventList( qmgrEventNode );
     qmgrEventNode = qmgrEventNode->next;
   }
+
+  logFuncExit( ) ;
 }
 
 /******************************************************************************/
@@ -94,6 +109,8 @@ void printAllEventList()
 /******************************************************************************/
 void printQmgrEventList( tQmgrNode* qmgrNode )
 {
+  logFuncCall( ) ;
+
   printf("Queue Manager: %s\n", qmgrNode->qmgr );
 
   printf("  Queue Manager Status\n");
@@ -101,6 +118,8 @@ void printQmgrEventList( tQmgrNode* qmgrNode )
 
   printf("  Single Queue Events\n" );
   printEventList( qmgrNode->singleEvent );
+
+  logFuncExit( ) ;
 }
 
 /******************************************************************************/
@@ -108,6 +127,8 @@ void printQmgrEventList( tQmgrNode* qmgrNode )
 /******************************************************************************/
 void printEventList( tEvent *eventList )
 {
+  logFuncCall( ) ;
+
   tEvent *event = eventList ;
 
   while( event )
@@ -118,6 +139,8 @@ void printEventList( tEvent *eventList )
     printf("    ----------------------------------------\n");
     event = event->next ;
   }
+
+  logFuncExit( ) ;
 }
 
 /******************************************************************************/
@@ -125,28 +148,37 @@ void printEventList( tEvent *eventList )
 /******************************************************************************/
 void printEvent( FILE *fp, tMqiItem *_item )
 {
+  logFuncCall( ) ;
+
   tMqiItem *item = _item ;
+
+  char *itemStr;
 
   while( item )
   {
-    fprintf( fp, "    %-25.25s  ", mqSelector2str( item->selector ) );
-    printEventItem( fp, item );
+    itemStr = (char*) getEventItem( item );
+    fprintf( fp, "    %-25.25s  %-25.25s", mqSelector2str( item->selector ) ,
+                                           itemStr );
     item = item->next ; 
   }
+  logFuncExit( ) ;
 }
 
 /******************************************************************************/
-/*  print Event                                                               */
+/*  print event item                                                          */
 /******************************************************************************/
-void printEventItem( FILE *fp, tMqiItem *_item )
+const char* getEventItem( tMqiItem *_item )
 {
+  logFuncCall( ) ;
+
   tMqiItem *item = _item ;
 
   char* value ;
+  _gBuff[0] = '\0';
 
   if( item == NULL )
   {
-    fprintf( fp, "null" );
+    sprintf( _gBuff, "null" );
     goto _door ;
   }
 
@@ -156,7 +188,6 @@ void printEventItem( FILE *fp, tMqiItem *_item )
     case MQIA_APPL_TYPE      : break;
     default :
     {
- //   fprintf( fp, "    %-25.25s  ", mqSelector2str( item->selector ) );
       if( item->type == INTIGER_ITEM )
       {
         value = (char*) itemValue2str( item->selector, item->value.intVal );
@@ -168,18 +199,23 @@ void printEventItem( FILE *fp, tMqiItem *_item )
   
       if( value == NULL )
       {
-        fprintf( fp, "%d", item->value.intVal );
+        snprintf( _gBuff, MQEV_GLOBAL_BUFFER_LNG, "%d", item->value.intVal );
       }
       else
       {
-        fprintf( fp, "%s",  value );
+        snprintf( _gBuff, MQEV_GLOBAL_BUFFER_LNG,  "%s",  value );
       }
-      fprintf( fp, "\n" );
+#if(0)
+      if( fp == stdout ) { fprintf( fp, "\n" ); }
+      else               { fprintf( fp, "\t" ); }
+#endif
     }
   }
 
   _door:
-  return;
+
+  logFuncExit( ) ;
+  return _gBuff ;
 }
 
 /******************************************************************************/
@@ -187,6 +223,8 @@ void printEventItem( FILE *fp, tMqiItem *_item )
 /******************************************************************************/
 void printMD( PMQMD pmd )
 {
+  logFuncCall( ) ;
+
   #define printMDln( format, key, value )       \
           {                                     \
 	        printf( "    %-20.20s:", key ); \
@@ -231,7 +269,8 @@ void printMD( PMQMD pmd )
 //printMDln("%9.9d"   ,"Orig Message Length",pmd->OriginalLength);
 
   _door:
-	return ;
+  logFuncExit( ) ;
+  return ;
 }
 
 
@@ -240,6 +279,8 @@ void printMD( PMQMD pmd )
 /******************************************************************************/
 const char* mqbyte2str( PMQBYTE value, MQLONG lng )
 {
+  logFuncCall( ) ;
+
   int i;
 
   sprintf( _gBuff, "0x" ) ;
@@ -249,14 +290,18 @@ const char* mqbyte2str( PMQBYTE value, MQLONG lng )
   }
   _gBuff[(i+1)*3] = '\0' ;
 
+  logFuncExit( ) ;
   return _gBuff;
 }
 
 /******************************************************************************/
 /*  print all event in a html table                    */
 /******************************************************************************/
-void  printAllEventTable()
+int  printAllEventTable( char* dir )
 {
+  logFuncCall( ) ;
+  int sysRc = 0 ;
+
   FILE* fp=stdout;
 //fprintf( fp, "Contet-type: text/html \n\n" );
   fprintf( fp, "<html>\n");
@@ -266,56 +311,88 @@ void  printAllEventTable()
 
   while( qmgrEventNode ) 
   {
-    printQmgrEventTable( fp, qmgrEventNode );
+    sysRc = printQmgrEventTable( dir , qmgrEventNode );
+    if( sysRc ) 
+    {
+      goto _door;
+    }
     qmgrEventNode = qmgrEventNode->next;
   }
   fprintf( fp, "</html>\n");
+
+  _door:
+
+  logFuncExit( ) ;
+  return sysRc ;
 }
 
 /******************************************************************************/
 /*  print queue manager event table                            */
 /******************************************************************************/
-void printQmgrEventTable( FILE* fp, tQmgrNode* qmgrNode )
+int printQmgrEventTable( const char *dir, tQmgrNode* qmgrNode )
 {
-  fprintf( fp, "<div align=\"center\">\n" );
-  fprintf( fp, "<h1>%s</h1>\n", qmgrNode->qmgr );
-  fprintf( fp, "</div>\n" );
+  logFuncCall( ) ;
 
-  fprintf( fp, "<table border=\"1\">\n" );
+  int sysRc = 0;
+  FILE *fp ;
 
-  printEventTopLine( fp, 1,"Date/Time", "MQIASY_REASON", "Message Id" );
-//printEventList( qmgrNode->qmgrEvent );
-  printEventTableLine( fp, qmgrNode->singleEvent );
+  char fileName[NAME_MAX];    // ignore the length of the path 
+  char *p;
 
-  fprintf( fp, "</table>\n" );
+  snprintf( fileName, NAME_MAX-strlen(".event"),   // build a name of the file
+	    "%s/%s", dir, qmgrNode->qmgr      );   // {htmldir}/{qmgr}.event
+  p = strchr( fileName, ' ' );                     // find 1st blank
+  if( p ) sprintf( p, ".event") ;                  // add suffix
+                                                   //
+  fp = fopen( fileName, "w" );            //open the file 
+  if( !fp )                                // handle error
+  {                                              //
+    logger( LSTD_OPEN_FILE_FAILED, fileName );     //
+    sysRc = 1;                            //
+    goto _door;                  //
+  }                                      //
+                                                  //
+  printEventTopLine( fp, "Date/Time"    ,       //
+                         "MQIASY_REASON",       //
+                         "Message Id"   ,       //
+                         "Description" );       //
+                     //   NULL         );      //
+  printEventTableLine( fp, qmgrNode->singleEvent );//
+                                      //
+  fprintf( fp, "\n" );
+  fclose( fp );                    //
+                                          //
+  _door:
+
+  logFuncExit( ) ;
+  return sysRc ;
 //printTableTopLine(fd,)
 }
 
 /******************************************************************************/
 /*  print evnt table top line      */
 /******************************************************************************/
-void printEventTopLine( FILE *fp, int nr, ... )
+void fPrintEventTopLine( FILE *fp, int nr, ... )
 {
+  logFuncCall( ) ;
+
   va_list argp ;
   int i;
 
-  int id ;
+  char *text ;
 
-  //check for example in initypes.h
-
-  fprintf( fp, "<tr>\n" );
-//fprintf( fp, "<th>date / time</th>");
   va_start( argp, nr );
 
   for( i=0; i<nr; i++ )
   {
-    id = va_arg( argp, char* );
-    fprintf( fp, "<th> %s </th>" );
+    text = va_arg( argp, char* );
+    fprintf( fp, "%s\t", text );
   }
 
   va_end( argp );
-//fprintf( fp, "<th>message  id</th>");
-  fprintf( fp, "\n</tr>\n" );
+  fprintf( fp, "\n" );
+
+  logFuncExit( ) ;
 }
 
 /******************************************************************************/
@@ -323,28 +400,46 @@ void printEventTopLine( FILE *fp, int nr, ... )
 /******************************************************************************/
 void printEventTableLine( FILE* fp, tEvent* eventList )
 {
+  logFuncCall( ) ;
+
   tEvent *event = eventList ;
   tMqiItem *item;
+  char *itemStr;
 
   while( event )
   {
-    fprintf( fp, "<tr>" );
     // -----------------------------------------------------
     // print message descriptor data
     // -----------------------------------------------------
-    fprintf( fp, "<td>%8.8s %6.6s</td>", event->pmd->PutDate, 
-	                                event->pmd->PutTime );
+    fprintf( fp, "%s",mqbyte2str(event->pmd->MsgId,24));
+
+    fprintf( fp, "%8.8s%6.6s\t", event->pmd->PutDate, 
+	                         event->pmd->PutTime );
     
     item = findMqiItem( event->item, MQIASY_REASON ) ;
-    fprintf( fp, "<td>");
-      printEventItem( fp, item );
-      deleteMqiItem( item );
-    fprintf( fp, "</td>");
+    itemStr = (char*) getEventItem( item );
+    fprintf( fp, "%s\t", itemStr );
 
-//  printMD( event->pmd );
-//  printEvent( event->item );
-    fprintf( fp, "<td>%s</td>",mqbyte2str(event->pmd->MsgId,24));
-    fprintf( fp, "</tr>\n" );
+
+    item = event->item ;
+    while( item )
+    {
+      if( item->selector == MQIASY_REASON )
+      {
+        item = item->next ;
+	continue ;
+      }
+      itemStr = (char*) getEventItem( item );
+      if( *itemStr != '\0')
+      {
+        fprintf( fp, "\t%s=%s", mqSelector2str( item->selector ), itemStr );
+      }
+      item = item->next ;
+    }
+    fprintf( fp, "\n" );
+
     event = event->next;
   }
+
+  logFuncExit( ) ;
 }

@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="89">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df root="." name="mqEv">
+      <df name="bin">
+        <df name="gcc">
+          <df name="64">
+            <df name="Linux.x86_64">
+            </df>
+          </df>
+        </df>
+      </df>
+      <df name="etc">
+        <df name="info">
+        </df>
+        <df name="ini">
+        </df>
+        <df name="ver">
+        </df>
+      </df>
+      <df name="include">
+        <df name="etc">
+        </df>
+        <df name="msgcat">
+          <in>lgmqe.h</in>
+          <in>lgmqm.h</in>
+          <in>lgstd.h</in>
+          <in>lgxym.h</in>
+        </df>
+        <in>ctl.h</in>
+        <in>dumper.h</in>
+        <in>inihnd.h</in>
+        <in>main.h</in>
+        <in>mqbase.h</in>
+        <in>mqdump.h</in>
+        <in>mqev.h</in>
+        <in>mqreason.h</in>
+        <in>mqtype.h</in>
+        <in>node.h</in>
+        <in>rename_for_new_project.h</in>
+        <in>worker.h</in>
+      </df>
+      <df name="lib">
+        <df name="cc">
+          <df name="32">
+            <df name="SunOS.i86pc">
+              <df name="etc">
+              </df>
+            </df>
+          </df>
+          <df name="64">
+            <df name="SunOS.i86pc">
+              <df name="etc">
+              </df>
+            </df>
+          </df>
+        </df>
+        <df name="gcc">
+          <df name="32">
+            <df name="Linux.x86_64">
+              <df name="etc">
+              </df>
+            </df>
+            <df name="SunOS.i86pc">
+              <df name="etc">
+              </df>
+            </df>
+          </df>
+          <df name="64">
+            <df name="Linux.x86_64">
+              <df name="etc">
+              </df>
+            </df>
+            <df name="SunOS.i86pc">
+              <df name="etc">
+              </df>
+            </df>
+          </df>
+        </df>
+      </df>
+      <df name="mk.inc">
+      </df>
+      <df name="obj">
+        <df name="gcc">
+          <df name="64">
+            <df name="Linux.x86_64">
+            </df>
+          </df>
+        </df>
+      </df>
+      <df name="rollout">
+        <df name="bin">
+          <df name="cc">
+            <df name="32">
+              <df name="SunOS.i86pc">
+              </df>
+            </df>
+            <df name="64">
+              <df name="SunOS.i86pc">
+              </df>
+            </df>
+          </df>
+          <df name="gcc">
+            <df name="32">
+              <df name="Linux.x86_64">
+              </df>
+              <df name="SunOS.i86pc">
+              </df>
+            </df>
+            <df name="64">
+              <df name="Linux.x86_64">
+              </df>
+              <df name="SunOS.i86pc">
+              </df>
+            </df>
+          </df>
+        </df>
+        <df name="include">
+          <df name="msgcat">
+            <in>lgmqe.h</in>
+            <in>lgmqm.h</in>
+            <in>lgstd.h</in>
+            <in>lgxym.h</in>
+          </df>
+          <in>ctl.h</in>
+          <in>genlib.h</in>
+          <in>inihnd.h</in>
+          <in>message.h</in>
+          <in>mqbase.h</in>
+          <in>mqdump.h</in>
+          <in>mqreason.h</in>
+          <in>mqtype.h</in>
+          <in>tutl.h</in>
+        </df>
+        <df name="lib">
+          <df name="cc">
+            <df name="32">
+              <df name="SunOS.i86pc">
+              </df>
+            </df>
+            <df name="64">
+              <df name="SunOS.i86pc">
+              </df>
+            </df>
+          </df>
+          <df name="gcc">
+            <df name="32">
+              <df name="Linux.x86_64">
+              </df>
+              <df name="SunOS.i86pc">
+              </df>
+            </df>
+            <df name="64">
+              <df name="Linux.x86_64">
+              </df>
+              <df name="SunOS.i86pc">
+              </df>
+            </df>
+          </df>
+        </df>
+      </df>
+      <df name="src">
+        <in>dumper.c</in>
+        <in>main.c</in>
+        <in>mqev.c</in>
+        <in>node.c</in>
+        <in>rename_for_new_project.c</in>
+        <in>worker.c</in>
+      </df>
+      <df name="test">
+        <df name="bin">
+          <df name="gcc">
+            <df name="64">
+              <df name="Linux.x86_64">
+              </df>
+            </df>
+          </df>
+        </df>
+        <df name="cfg">
+        </df>
+        <df name="include">
+          <df name="etc">
+          </df>
+          <in>tutl.h</in>
+        </df>
+        <df name="log">
+          <df name="gcc">
+            <df name="64">
+              <df name="Linux.x86_64">
+              </df>
+            </df>
+          </df>
+        </df>
+        <df name="obj">
+          <df name="gcc">
+            <df name="64">
+              <df name="Linux.x86_64">
+              </df>
+            </df>
+          </df>
+        </df>
+        <df name="src">
+          <in>t_main_000.c</in>
+          <in>t_template_000.c</in>
+        </df>
+      </df>
+      <df name="tools">
+        <df name="Linux.x86_64">
+          <df name="etc">
+          </df>
+        </df>
+        <df name="script">
+          <df name="etc">
+          </df>
+        </df>
+        <df name="SunOS.i86pc">
+          <df name="etc">
+          </df>
+        </df>
+      </df>
+      <df name="var">
+        <df name="cat">
+          <df name="obj">
+            <df name="gcc">
+              <df name="64">
+                <df name="Linux.x86_64">
+                </df>
+              </df>
+            </df>
+          </df>
+          <df name="src">
+          </df>
+        </df>
+        <df name="cmdl">
+          <df name="obj">
+            <df name="gcc">
+              <df name="64">
+                <df name="Linux.x86_64">
+                </df>
+              </df>
+            </df>
+          </df>
+          <df name="src">
+            <in>cmdln.c</in>
+            <in>cmdln.h</in>
+          </df>
+        </df>
+        <df name="dep">
+          <df name="gcc">
+            <df name="64">
+              <df name="Linux.x86_64">
+              </df>
+            </df>
+          </df>
+        </df>
+        <df name="log">
+        </df>
+        <df name="mq">
+          <df name="gen">
+          </df>
+          <df name="include">
+          </df>
+          <df name="src">
+          </df>
+        </df>
+        <df name="vers">
+          <df name="include">
+            <df name="msgcat">
+            </df>
+            <in>version.h</in>
+          </df>
+          <df name="obj">
+            <df name="gcc">
+              <df name="64">
+                <df name="Linux.x86_64">
+                </df>
+              </df>
+            </df>
+          </df>
+          <df name="src">
+            <in>ver4bin.c</in>
+          </df>
+        </df>
+      </df>
+    </df>
+  </logicalFolder>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <platform>2</platform>
+      </toolsSet>
+      <compile>
+        <compiledirpicklist>
+          <compiledirpicklistitem>.</compiledirpicklistitem>
+          <compiledirpicklistitem>${AUTO_FOLDER}</compiledirpicklistitem>
+        </compiledirpicklist>
+        <compiledir>${AUTO_FOLDER}</compiledir>
+        <compilecommandpicklist>
+          <compilecommandpicklistitem>${MAKE} ${ITEM_NAME}.o</compilecommandpicklistitem>
+          <compilecommandpicklistitem>${AUTO_COMPILE}</compilecommandpicklistitem>
+        </compilecommandpicklist>
+        <compilecommand>${AUTO_COMPILE}</compilecommand>
+      </compile>
+      <dbx_gdbdebugger version="1">
+        <gdb_pathmaps>
+        </gdb_pathmaps>
+        <gdb_interceptlist>
+          <gdbinterceptoptions gdb_all="false" gdb_unhandled="true" gdb_unexpected="true"/>
+        </gdb_interceptlist>
+        <gdb_options>
+          <DebugOptions>
+            <option name="debug_command"
+                    value="bin/gcc/64/Linux.x86_64/mqev --console --ini etc/ini/mqev.ini"/>
+          </DebugOptions>
+        </gdb_options>
+        <gdb_buildfirst gdb_buildfirst_overriden="false" gdb_buildfirst_old="false"/>
+      </dbx_gdbdebugger>
+      <nativedebugger version="1">
+        <engine>gdb</engine>
+      </nativedebugger>
+      <runprofile version="9">
+        <runcommandpicklist>
+          <runcommandpicklistitem>"${OUTPUT_PATH}"</runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" </runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}"   </runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" --console --ini </runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" --console --ini etc/ini/mqenv.ini</runcommandpicklistitem>
+          <runcommandpicklistitem>bin/gcc/--console --ini etc/ini/mqenv.ini</runcommandpicklistitem>
+          <runcommandpicklistitem> bin/gcc/64/Linux.x86_64/mqev --console --ini etc/ini/mqev.ini</runcommandpicklistitem>
+          <runcommandpicklistitem>bin/gcc/64/Linux.x86_64/mqev --html --ini etc/ini/mqev.ini</runcommandpicklistitem>
+          <runcommandpicklistitem>bin/gcc/64/Linux.x86_64/mqev --console --ini etc/ini/mqev.ini</runcommandpicklistitem>
+        </runcommandpicklist>
+        <runcommand>bin/gcc/64/Linux.x86_64/mqev --console --ini etc/ini/mqev.ini</runcommand>
+        <rundir>.</rundir>
+        <buildfirst>false</buildfirst>
+        <terminal-type>0</terminal-type>
+        <remove-instrumentation>0</remove-instrumentation>
+        <environment>
+        </environment>
+      </runprofile>
+    </conf>
+  </confs>
+</configurationDescriptor>

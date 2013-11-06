@@ -106,21 +106,29 @@ int consoleWorker()
 
 
 /******************************************************************************/
-/*  html worker                  */
+/*  html worker                        */
 /******************************************************************************/
 int htmlWorker()
 {
   logFuncCall( ) ;
-
   int sysRc = 0 ;
+
+  tIniNode *searchIni ;    // data structure for getting searching in ini files
+  char     *wwwDir    ;    // directory for raw html data
+
+  searchIni = getIniNode( "system", "html" );  // system.html node from ini
+  wwwDir = getIniStrValue( searchIni,"dir" );  // get file & level from node
+  if( !wwwDir )
+  {
+    sysRc = 1;
+    goto _door;
+  }
 
   sysRc = initMq();
   if( sysRc != 0 )
-  {
+  { 
     goto _door ;
   }
-
-  _door :
 
   // -------------------------------------------------------
   // browse messages in input queue
@@ -130,7 +138,13 @@ int htmlWorker()
   // -------------------------------------------------------
   // list events on html
   // -------------------------------------------------------
-  printAllEventTable();
+  sysRc = printAllEventTable( wwwDir );
+  if( sysRc != 0 )
+  {
+    goto _door;
+  }
+
+  _door :
 
   logFuncExit( ) ;
   return sysRc ;
