@@ -346,22 +346,23 @@ int printQmgrEventTable( const char *dir, tQmgrNode* qmgrNode )
                                                    //
   fp = fopen( fileName, "w" );            //open the file 
   if( !fp )                                // handle error
-  {                                              //
+  {                                                //
     logger( LSTD_OPEN_FILE_FAILED, fileName );     //
-    sysRc = 1;                            //
-    goto _door;                  //
-  }                                      //
+    sysRc = 1;                                  //
+    goto _door;                    //
+  }                                              //
                                                   //
-  printEventTopLine( fp, "Date/Time"    ,       //
+  printEventTopLine( fp, "Message Id"   ,       //
+                         "Date/Time"    ,       //
                          "MQIASY_REASON",       //
-                         "Message Id"   ,       //
+                         
                          "Description" );       //
-                     //   NULL         );      //
+                                   //
   printEventTableLine( fp, qmgrNode->singleEvent );//
-                                      //
+                                              //
   fprintf( fp, "\n" );
   fclose( fp );                    //
-                                          //
+                                                //
   _door:
 
   logFuncExit( ) ;
@@ -411,14 +412,14 @@ void printEventTableLine( FILE* fp, tEvent* eventList )
     // -----------------------------------------------------
     // print message descriptor data
     // -----------------------------------------------------
-    fprintf( fp, "%s",mqbyte2str(event->pmd->MsgId,24));
+    fprintf( fp, "%s\t",mqbyte2str(event->pmd->MsgId,24));
 
     fprintf( fp, "%8.8s%6.6s\t", event->pmd->PutDate, 
 	                         event->pmd->PutTime );
     
     item = findMqiItem( event->item, MQIASY_REASON ) ;
     itemStr = (char*) getEventItem( item );
-    fprintf( fp, "%s\t", itemStr );
+    fprintf( fp, "%s", itemStr );
 
 
     item = event->item ;

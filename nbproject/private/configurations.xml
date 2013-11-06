@@ -329,10 +329,10 @@
           <runcommandpicklistitem>"${OUTPUT_PATH}" --console --ini etc/ini/mqenv.ini</runcommandpicklistitem>
           <runcommandpicklistitem>bin/gcc/--console --ini etc/ini/mqenv.ini</runcommandpicklistitem>
           <runcommandpicklistitem> bin/gcc/64/Linux.x86_64/mqev --console --ini etc/ini/mqev.ini</runcommandpicklistitem>
-          <runcommandpicklistitem>bin/gcc/64/Linux.x86_64/mqev --html --ini etc/ini/mqev.ini</runcommandpicklistitem>
           <runcommandpicklistitem>bin/gcc/64/Linux.x86_64/mqev --console --ini etc/ini/mqev.ini</runcommandpicklistitem>
+          <runcommandpicklistitem>bin/gcc/64/Linux.x86_64/mqev --html --ini etc/ini/mqev.ini</runcommandpicklistitem>
         </runcommandpicklist>
-        <runcommand>bin/gcc/64/Linux.x86_64/mqev --console --ini etc/ini/mqev.ini</runcommand>
+        <runcommand>bin/gcc/64/Linux.x86_64/mqev --html --ini etc/ini/mqev.ini</runcommand>
         <rundir>.</rundir>
         <buildfirst>false</buildfirst>
         <terminal-type>0</terminal-type>
