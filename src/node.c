@@ -601,7 +601,7 @@ tEvent* newEventNode()
 }
 
 /******************************************************************************/
-/* add event node                                                     */
+/* add event node                                                             */
 /******************************************************************************/
 tEvent* addEventNode( tEvent *anchor, tEvent *node )
 {
@@ -622,7 +622,7 @@ tEvent* addEventNode( tEvent *anchor, tEvent *node )
 }
 
 /******************************************************************************/
-/* item to event                                                       */
+/* item to event                                                              */
 /******************************************************************************/
 void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
 {
@@ -757,9 +757,9 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
 
 
 /******************************************************************************/
-/*  move mqi item                                                    */
-/*                                                               */
-/*    description:                                     */
+/*  move mqi item                                                        */
+/*                                                                   */
+/*    description:                                         */
 /*    items will be moved from item list to event list       */
 /******************************************************************************/
 void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event )
@@ -793,7 +793,14 @@ void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event )
 }
 
 /******************************************************************************/
-/*  get message id pairs                               */
+/*  get message id pairs                                       */
+/*                              */
+/*    description:                          */
+/*      match close event and open event (f.e. stop/start queue manager or    */
+/*      channel or queue depth high/low water               */
+/*      up to MSGID_PAIR_AMOUNT/2 pairs are possible. This function will be   */
+/*      recalled once more with the next main() cycle if there are more then  */
+/*      MSGID_PAIR_AMOUNT event messages on the queue        */
 /******************************************************************************/
 PMQBYTE24 getMsgIdPair()
 {

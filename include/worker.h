@@ -33,3 +33,4 @@
 int xymonWorker();
 int consoleWorker();
 int htmlWorker();
+int ackWorker();

@@ -87,6 +87,12 @@ int main(int argc, const char* argv[] )
     goto _door;
   }
 
+  if( getStrArrayAttr( "ack" ) )
+  {
+    sysRc = ackWorker() ;
+    goto _door;
+  }
+
   _door :
 
   return sysRc ;

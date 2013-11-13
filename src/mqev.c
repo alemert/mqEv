@@ -97,7 +97,7 @@ int initMq( )
   // -------------------------------------------------------
   // connect to qmgr
   // -------------------------------------------------------
-  char *qmgr = getStrAttr( "qmgr" );         // try to get qmgr name from cmdln
+  char *qmgr = ( "qmgr" );         // try to get qmgr name from cmdln
   if( qmgr == NULL )                         // if no qmgr name on cmdln 
   {                                          // try to get it from the ini file
      qmgr = getIniStrValue( getIniNode("mq","qmgr",NULL), "name" ); 
@@ -290,7 +290,7 @@ int handleDoneEvents()
 /******************************************************************************/
 /*   move messages                                */
 /******************************************************************************/
-int moveMessages( PMQBYTE24 msgIdArray, int getQueue, int putQueue )
+int moveMessages( PMQBYTE24 _msgIdArray, int _getQueue, int _putQueue )
 {
   logFuncCall( ) ;
 
@@ -333,7 +333,7 @@ int moveMessages( PMQBYTE24 msgIdArray, int getQueue, int putQueue )
     default : goto _door;                 //
   }                                       //
                                           //
-  msgId = msgIdArray ;                    //
+  msgId = _msgIdArray ;                    //
   while( memcmp( msgId, MQMI_NONE, sizeof(MQBYTE24) ) != 0 ) 
   {                                       //
     // -----------------------------------------------------  
@@ -405,9 +405,9 @@ int moveMessages( PMQBYTE24 msgIdArray, int getQueue, int putQueue )
         goto _door;                       //
       }                                   //
     }                                     //
-    msgId++;        //
-  }                                     //
-                                    //
+    msgId++;                //
+  }                                       //
+                                      //
   // -------------------------------------------------------  
   // commit transaction
   // -------------------------------------------------------  
@@ -415,7 +415,7 @@ int moveMessages( PMQBYTE24 msgIdArray, int getQueue, int putQueue )
   switch( sysRc )                         //
   {                                       //
     case MQRC_NONE : break;               //
-    default        : goto _door;  //
+    default        : goto _door;        //
   }                                       //
                                           //
   _door:

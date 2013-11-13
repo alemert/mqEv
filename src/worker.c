@@ -1,11 +1,12 @@
 /******************************************************************************/
-/*   M Q   E V E N T S                                           */
-/*                                                                        */
-/*    Worker functions:                                  */
-/*      - xymonWorker                                          */
-/*      - consoleWorker                                    */
-/*      - htmlWorker                    */
-/*                                                        */
+/*   M Q   E V E N T S                                                        */
+/*                                                                            */
+/*    Worker functions:                                        */
+/*      - xymonWorker                                                */
+/*      - consoleWorker                                          */
+/*      - htmlWorker                          */
+/*      - ackWorker                    */
+/*                                                          */
 /******************************************************************************/
 
 /******************************************************************************/
@@ -25,6 +26,7 @@
 #include <ctl.h>
 #include <msgcat/lgstd.h>
 #include <mqbase.h>
+#include <worker.h>
 
 // ---------------------------------------------------------
 // local
@@ -145,6 +147,33 @@ int htmlWorker()
   }
 
   _door :
+
+  logFuncExit( ) ;
+  return sysRc ;
+}
+
+/******************************************************************************/
+/*  acknowledge worker      */
+/******************************************************************************/
+int ackWorker( )
+{
+  logFuncCall( ) ;
+  int sysRc = 0 ;
+
+  char** msgIdArr    ;
+  int    msgIdArrSize;
+
+  msgIdArr = getStrArrayAttr( "ack" );  // get all message id's from 
+                                        //   the command line
+  if( !msgIdArr )                       // already checked in main 
+  {                                     //   message id is not NULL
+    goto _door;                      //
+  }                              //
+                                        //
+  msgIdArrSize = getAttrSize( "ack" );  // get the nr of message id's
+                                    //
+
+  _door :      // 
 
   logFuncExit( ) ;
   return sysRc ;
