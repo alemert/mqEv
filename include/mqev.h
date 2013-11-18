@@ -34,7 +34,11 @@
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
 int initMq( );
+void endMq( );
 int browseEvents( );
 void printEventList();
 int handleDoneEvents();
+void msgIdStr2MQbyte( char* str, PMQBYTE24 msgid );
+MQLONG acknowledgeMessages();
+
 

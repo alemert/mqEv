@@ -9,14 +9,17 @@
 /*        - Local Events      LOCALEV(ENABLED)                    */
 /*        - Authority Events  AUTHOREV(ENABLED)                  */
 /*        - Inibit Evnets     INHIBTEV(ENABLED)              */
-/*                                  */
+/*                                              */
 /*                                                                            */
 /*                                                                            */
-/*   functions:                                                      */
-/*    - initMq                                              */
-/*    - browseEvents                                      */
-/*    - printEventList                        */
-/*    - handleDoneEvents                    */
+/*   functions:                                                               */
+/*    - initMq                                                          */
+/*    - browseEvents                                                  */
+/*    - printEventList                                    */
+/*    - handleDoneEvents                              */
+/*    - moveMessages                            */
+/*    - msgIdStr2MQbyte                        */
+/*    - acknowledgeMessages                    */
 /*                                          */
 /******************************************************************************/
 
@@ -28,6 +31,7 @@
 // system
 // ---------------------------------------------------------
 #include <string.h>
+#include <stdlib.h>
 
 // ---------------------------------------------------------
 // mq
@@ -86,7 +90,7 @@ int moveMessages( PMQBYTE24 msgIdArray, int getQueue, int putQueue );
 /******************************************************************************/
 
 /******************************************************************************/
-/* init mq connection                                          */
+/* init mq connection                                                         */
 /******************************************************************************/
 int initMq( )
 {
@@ -97,19 +101,19 @@ int initMq( )
   // -------------------------------------------------------
   // connect to qmgr
   // -------------------------------------------------------
-  char *qmgr = ( "qmgr" );         // try to get qmgr name from cmdln
-  if( qmgr == NULL )                         // if no qmgr name on cmdln 
-  {                                          // try to get it from the ini file
+  char *qmgr = getStrAttr( "qmgr" );       // try to get qmgr name from cmdln
+  if( qmgr == NULL )                       // if no qmgr name on cmdln 
+  {                                        // try to get it from the ini file
      qmgr = getIniStrValue( getIniNode("mq","qmgr",NULL), "name" ); 
-  }                                          //
-                                             // if no qmgr on cmdln or ini
-  sysRc = mqConn( qmgr, &_ghConn );          //   use default qmgr (qmgr==NULL)
-  switch( sysRc )                            // connect to qmgr 
-  {                                          //
-    case MQRC_NONE : break ;                 // connect ok
-    default        : goto _door ;            // connect failed
-  }                                          //
-                                             //
+  }                                        //
+                                           // if no qmgr on cmdln or ini
+  sysRc = mqConn( qmgr, &_ghConn );        //   use default qmgr (qmgr==NULL)
+  switch( sysRc )                          // connect to qmgr 
+  {                                        //
+    case MQRC_NONE : break ;               // connect ok
+    default        : goto _door ;          // connect failed
+  }                                        //
+                                           //
   // -------------------------------------------------------
   // open event queue
   // -------------------------------------------------------
@@ -186,12 +190,34 @@ int initMq( )
 }
 
 /******************************************************************************/
-/* browse events                                */
+/*  end MQ                     */
+/******************************************************************************/
+void endMq()
+{
+  logFuncCall( ) ;
+
+
+  if( _gohEvQueue != MQHO_UNUSABLE_HOBJ )
+  {
+    mqCloseObject( _ghConn, &_gohEvQueue );  // ignore reason, end of program
+  }
+
+  if( _gohAckQueue != MQHO_UNUSABLE_HOBJ )
+  {
+    mqCloseObject( _ghConn, &_gohAckQueue ); // ignore reason, end of program
+  }
+
+  mqDisc( &_ghConn ) ;                       // global connection handle
+
+  logFuncExit( ) ;
+}
+
+/******************************************************************************/
+/* browse events                                              */
 /******************************************************************************/
 int browseEvents( )
 {
   logFuncCall( ) ;
-
   int sysRc = 0 ;
 
   MQMD  evMsgDscr = {MQMD_DEFAULT};  // message descriptor (set to default)
@@ -270,25 +296,42 @@ int browseEvents( )
 }
 
 /******************************************************************************/
-/*  handle done events                      */
+/*  handle done events                            */
 /******************************************************************************/
 int handleDoneEvents()
 {
   logFuncCall( ) ;
+  int cnt;
   int sysRc = 0 ;
 
   PMQBYTE24 msgIdPair ;
 
   msgIdPair = getMsgIdPair();
   
-  moveMessages( msgIdPair, COLLECTION_QUEUE, DONE_QUEUE );
+  sysRc = moveMessages( msgIdPair, COLLECTION_QUEUE, DONE_QUEUE );
+  if( sysRc != 0 )
+  {
+    goto _door;
+  }
+
+  if( sysRc == 0 )
+  {
+    cnt=0;
+    while( memcmp(msgIdPair[cnt],MQMI_NONE,sizeof(MQBYTE24)) == 0 )
+    {
+      cnt++; 
+    }
+    sysRc = -cnt;
+  }
+
+  _door:
 
   logFuncExit( ) ;
   return sysRc ;
 }
 
 /******************************************************************************/
-/*   move messages                                */
+/*   move messages                                                  */
 /******************************************************************************/
 int moveMessages( PMQBYTE24 _msgIdArray, int _getQueue, int _putQueue )
 {
@@ -333,7 +376,7 @@ int moveMessages( PMQBYTE24 _msgIdArray, int _getQueue, int _putQueue )
     default : goto _door;                 //
   }                                       //
                                           //
-  msgId = _msgIdArray ;                    //
+  msgId = _msgIdArray ;                   //
   while( memcmp( msgId, MQMI_NONE, sizeof(MQBYTE24) ) != 0 ) 
   {                                       //
     // -----------------------------------------------------  
@@ -342,7 +385,7 @@ int moveMessages( PMQBYTE24 _msgIdArray, int _getQueue, int _putQueue )
                                           //
     memcpy( &(md.MsgId), msgId, sizeof(md.MsgId) );
     int loop = 1;                         // resizing the message buffer loop
-    while( loop == 1 )                  // resize message buffer if message
+    while( loop == 1 )                    // resize message buffer if message
     {                                     //  truncated
       reason = mqGet( _ghConn   ,         // connection handle
                      _gohEvQueue,         // pointer to queue handle
@@ -354,14 +397,14 @@ int moveMessages( PMQBYTE24 _msgIdArray, int _getQueue, int _putQueue )
                                           //
       switch( reason )                    //
       {                                   //
-        case MQRC_NONE :               //
-	{                              //
-          loop = 0;                  //
-	  break;                 // ok
-	}                        //
+        case MQRC_NONE :                  //
+	{                                 //
+          loop = 0;                       //
+	  break;                       // ok
+	}                               //
         case MQRC_NO_MSG_AVAILABLE :      // this can only occur, if message is
         {                                 //  moved to acknowledge queue 
-	  loop = -1;            //
+	  loop = -1;                //
           break;                          //  manually at the same time
         }                                 //
         case MQRC_TRUNCATED_MSG_FAILED :  // message buffer to small for 
@@ -377,11 +420,11 @@ int moveMessages( PMQBYTE24 _msgIdArray, int _getQueue, int _putQueue )
 	}                                 //
       }                                   //
     }                                     //
-    if( loop == -1 )            //
-    {                            //
-      msgId++;                    //
-      continue;                      //
-    }                                    //
+    if( loop == -1 )                //
+    {                                     //
+      msgId++;                            //
+      continue;                           //
+    }                                     //
                                           //
     // -----------------------------------------------------  
     // write the same message to done queue
@@ -398,16 +441,16 @@ int moveMessages( PMQBYTE24 _msgIdArray, int _getQueue, int _putQueue )
                                           //
     switch( reason )                      //
     {                                     //
-      case MQRC_NONE : break;          //
+      case MQRC_NONE : break;             //
       default :                           //
       {                                   //
-        sysRc = reason;                //
+        sysRc = reason;                   //
         goto _door;                       //
       }                                   //
     }                                     //
-    msgId++;                //
+    msgId++;                              //
   }                                       //
-                                      //
+                                          //
   // -------------------------------------------------------  
   // commit transaction
   // -------------------------------------------------------  
@@ -415,10 +458,92 @@ int moveMessages( PMQBYTE24 _msgIdArray, int _getQueue, int _putQueue )
   switch( sysRc )                         //
   {                                       //
     case MQRC_NONE : break;               //
-    default        : goto _door;        //
+    default        : goto _door;          //
   }                                       //
                                           //
   _door:
   logFuncExit( ) ;
   return sysRc ;
+}
+
+/******************************************************************************/
+/*  message id string to MQBYTE24                  */
+/******************************************************************************/
+void msgIdStr2MQbyte( char* _str, PMQBYTE24 _pmsgid )
+{
+  logFuncCall( ) ;
+
+  char buff[3];
+  char *str;
+  int i ;
+
+  MQBYTE24 msgid ;
+
+  for( i=0, str=_str; i<24; i++)
+  {
+    memcpy( buff, str, 2 );
+    buff[2] = '\0' ;
+    msgid[i] = (MQBYTE) strtoul( buff, NULL, 16);
+    str += 2;
+  }
+
+  memcpy( _pmsgid, &msgid, sizeof(MQBYTE24) );
+  logFuncExit( ) ;
+}
+
+/******************************************************************************/
+/*  acknowledge messages            */
+/******************************************************************************/
+MQLONG acknowledgeMessages()
+{
+  logFuncCall( ) ;
+  MQLONG sysRc ;
+
+  char** msgIdArr    ;
+  int    msgIdArrSize;
+
+  PMQBYTE24 msgId24 = NULL ;
+
+  int i;
+
+  // -------------------------------------------------------
+  // get message id's from command line as a string, 
+  //   allocate memory for message id's in hex format
+  //   convert string into hex
+  // -------------------------------------------------------
+  msgIdArr = getStrArrayAttr( "ack" );    // get all message id's from 
+  if( !msgIdArr )                         //   the command line
+  {                                       // this has already been checked in 
+    goto _door;                           //   main(), message id is not NULL
+  }                                       //
+                                          //
+  msgIdArrSize = getAttrSize( "ack" );    // get nr. of message id's
+                                          //
+  msgId24 = (PMQBYTE24) malloc( sizeof(MQBYTE24)*(msgIdArrSize+1) );
+  if( !msgId24 )                          // allocate memory for message id's
+  {                                       //
+    logger( LSTD_MEM_ALLOC_ERROR );       //
+    goto _door;                           //
+  }                                       //
+                                          //
+  for( i=0; i< msgIdArrSize; i++ )        //
+  {                                       //
+    msgIdStr2MQbyte( msgIdArr[i], (msgId24+i) );  
+  }                                       //
+  memcpy( (msgId24+1), MQMI_NONE, sizeof(MQBYTE24) );
+                                          //
+  sysRc = moveMessages( msgId24         , // move messages from collect queue
+		        COLLECTION_QUEUE, // including mqBegin and mqCommit
+		        DONE_QUEUE     ); //
+  if( sysRc != 0 )                      //
+  {                                 //
+    goto _door;                      //
+  }                        //
+                                //
+  _door :                                 // 
+                                          //
+  if( msgId24) free( msgId24 );      //
+                                        //
+  logFuncExit( );
+  return sysRc  ;
 }

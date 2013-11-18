@@ -16,6 +16,11 @@
 // ---------------------------------------------------------
 // system
 // ---------------------------------------------------------
+#include <unistd.h>
+
+// ---------------------------------------------------------
+// MQ
+// ---------------------------------------------------------
 #include <cmqc.h>
 
 // ---------------------------------------------------------
@@ -120,32 +125,58 @@ int htmlWorker()
 
   searchIni = getIniNode( "system", "html" );  // system.html node from ini
   wwwDir = getIniStrValue( searchIni,"dir" );  // get file & level from node
-  if( !wwwDir )
-  {
-    sysRc = 1;
-    goto _door;
-  }
-
-  sysRc = initMq();
-  if( sysRc != 0 )
-  { 
-    goto _door ;
-  }
-
-  // -------------------------------------------------------
-  // browse messages in input queue
-  // -------------------------------------------------------
-  browseEvents();
-
-  // -------------------------------------------------------
-  // list events on html
-  // -------------------------------------------------------
-  sysRc = printAllEventTable( wwwDir );
-  if( sysRc != 0 )
-  {
-    goto _door;
-  }
-
+  if( !wwwDir )                                // abort if html-interface 
+  {                                            //  directory does not exist
+    sysRc = 1 ;                                //
+    goto _door;                                //
+  }                                            //
+                                               //
+  sysRc = initMq();                      // connect to Queue Manager and open collect and acknowledge queue
+  if( sysRc != 0 )                      //
+  {                                       //
+    goto _door;                            //
+  }                                      //
+                                    //
+  while( 1 )                        //
+  {                                    //
+    // -----------------------------------------------------
+    // browse messages in input queue
+    // -----------------------------------------------------
+    sysRc = browseEvents();            // browse events 
+    if( sysRc != 0 )                           //
+    {                                          //
+      goto _door;                              //
+    }                                          //
+                                          //
+    // -----------------------------------------------------
+    // handle events that can be moved to acknowledge queue automatically
+    // -----------------------------------------------------
+    sysRc = handleDoneEvents();            // match stop / start events and move them to acknowledge queue
+    if( sysRc > 0 )                            //
+    {                                          //
+      goto _door;                              //
+    }                                          //
+    else if( sysRc < 0 )                // some events where moved through handleDoneEvents, the collect queue has to be re-read
+    {      //
+      sysRc = browseEvents();              //
+      if( sysRc != 0 )                         //
+      {                                        //
+        goto _door;                            //
+      }                                        //
+    }
+                                        //
+    // -----------------------------------------------------
+    // list events on html
+    // -----------------------------------------------------
+    sysRc = printAllEventTable( wwwDir );      //
+    if( sysRc != 0 )              //
+    {                          //
+      goto _door;              //
+    }                          //
+                    //
+    sleep(1);      //
+  }                              //
+                                    //
   _door :
 
   logFuncExit( ) ;
@@ -160,21 +191,44 @@ int ackWorker( )
   logFuncCall( ) ;
   int sysRc = 0 ;
 
-  char** msgIdArr    ;
-  int    msgIdArrSize;
+  tIniNode *searchIni ;    // data structure for getting searching in ini files
+  char     *wwwDir    ;    // directory for raw html data
 
-  msgIdArr = getStrArrayAttr( "ack" );  // get all message id's from 
-                                        //   the command line
-  if( !msgIdArr )                       // already checked in main 
-  {                                     //   message id is not NULL
-    goto _door;                      //
+  searchIni = getIniNode("system", "html"); // system.html node from ini
+  wwwDir = getIniStrValue(searchIni,"dir"); // get file & level from node
+  if( !wwwDir )                        //
+  {                                  //
+    sysRc = 1;                    //
+    goto _door;                    //
   }                              //
-                                        //
-  msgIdArrSize = getAttrSize( "ack" );  // get the nr of message id's
-                                    //
-
-  _door :      // 
-
+                                //
+  sysRc = initMq();                       // connect to queue manager 
+  if( sysRc != 0 )                        // and open the queues
+  {                                       // handle mq errors
+    goto _door;                           //
+  }                                       //
+                                          //
+  sysRc = acknowledgeMessages( );         // acknowledge messages through 
+  if( sysRc != 0 )                  // moving them from collection to acknowledge queue
+  {                              //
+    goto _door;                           //
+  }                                //
+                                          //
+  sysRc = browseEvents();      //
+  if( sysRc != 0 )                  //
+  {                                  //
+    goto _door;                    //
+  }                            //
+                              //
+  endMq();                          // ignore reason, end of program
+                              //
+  sysRc = printAllEventTable( wwwDir );   //
+  if( sysRc != 0 )          //
+  {                                  //
+    goto _door;            //
+  }                                  //
+  _door :                                 // 
+  
   logFuncExit( ) ;
   return sysRc ;
 }

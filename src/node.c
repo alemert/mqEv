@@ -18,7 +18,7 @@
 /*    - item2event                                                      */
 /*    - moveMqiItem                                          */
 /*    - getMsgIdPair                              */
-/*    -  matchEventReason                             */
+/*    - matchEventReason                             */
 /*                                                                    */
 /******************************************************************************/
 
