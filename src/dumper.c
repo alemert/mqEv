@@ -28,6 +28,10 @@
 #include <limits.h>
 #include <string.h>
 
+#define __USE_XOPEN
+#include <time.h>
+#undef _USE_XOPEN
+
 // ---------------------------------------------------------
 // mq
 // ---------------------------------------------------------
@@ -302,11 +306,6 @@ int  printAllEventTable( char* dir )
   logFuncCall( ) ;
   int sysRc = 0 ;
 
-  FILE* fp=stdout;
-//fprintf( fp, "Contet-type: text/html \n\n" );
-  fprintf( fp, "<html>\n");
-  fprintf( fp, "<title>MQ Events</title>\n");
-
   tQmgrNode* qmgrEventNode = _gEventList ;
 
   while( qmgrEventNode ) 
@@ -318,7 +317,6 @@ int  printAllEventTable( char* dir )
     }
     qmgrEventNode = qmgrEventNode->next;
   }
-  fprintf( fp, "</html>\n");
 
   _door:
 
@@ -407,8 +405,28 @@ void printEventTableLine( FILE* fp, tEvent* eventList )
   tMqiItem *item;
   char *itemStr;
 
+ struct tm  gmtTs;
+ struct tm  locTs;
+ time_t     gmtTime;
+ time_t     locTime;
+ char       timeStr[64];
+ char       gmtStr[64];
+ char       locStr[64];
+
+ time_t currTime = time(0);
+ time_t utcOffset = currTime - mktime(gmtime(&currTime));
+
   while( event )
   {
+    sprintf( timeStr, "%8.8s%6.6s", event->pmd->PutDate, 
+	                            event->pmd->PutTime);
+    printf( "%s\n", gmtStr );
+    strptime( timeStr, "%Y%m%d%H%M%S", &gmtTs);
+    gmtTime = mktime( &gmtTs );
+    locTime = gmtTime - utcOffset;
+    locTs = *localtime( &locTime );
+    strftime( locStr, 64, "%Y%m%d%H%M%S",&locTs);
+
     // -----------------------------------------------------
     // print message descriptor data
     // -----------------------------------------------------
@@ -420,7 +438,6 @@ void printEventTableLine( FILE* fp, tEvent* eventList )
     item = findMqiItem( event->item, MQIASY_REASON ) ;
     itemStr = (char*) getEventItem( item );
     fprintf( fp, "%s", itemStr );
-
 
     item = event->item ;
     while( item )

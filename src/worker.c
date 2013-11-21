@@ -131,52 +131,52 @@ int htmlWorker()
     goto _door;                                //
   }                                            //
                                                //
-  sysRc = initMq();                      // connect to Queue Manager and open collect and acknowledge queue
-  if( sysRc != 0 )                      //
-  {                                       //
-    goto _door;                            //
-  }                                      //
-                                    //
-  while( 1 )                        //
-  {                                    //
+  sysRc = initMq();                            // connect to Queue Manager 
+  if( sysRc != 0 )                             //  and open the collect and
+  {                                            //  the acknowledge queue
+    goto _door;                                //
+  }                                            //
+                                               //
+  while( 1 )                                   //
+  {                                            //
     // -----------------------------------------------------
     // browse messages in input queue
     // -----------------------------------------------------
-    sysRc = browseEvents();            // browse events 
+    sysRc = browseEvents();                    // browse events 
     if( sysRc != 0 )                           //
     {                                          //
       goto _door;                              //
     }                                          //
-                                          //
+                                               //
     // -----------------------------------------------------
     // handle events that can be moved to acknowledge queue automatically
     // -----------------------------------------------------
-    sysRc = handleDoneEvents();            // match stop / start events and move them to acknowledge queue
-    if( sysRc > 0 )                            //
-    {                                          //
+    sysRc = handleDoneEvents();                // match stop / start events 
+    if( sysRc > 0 )                            //  and move them to the 
+    {                                          //  acknowledge queue
       goto _door;                              //
     }                                          //
-    else if( sysRc < 0 )                // some events where moved through handleDoneEvents, the collect queue has to be re-read
-    {      //
-      sysRc = browseEvents();              //
+    else if( sysRc < 0 )                       // handleDoneEvents moved some 
+    {                                          //  events, therefor the collect 
+      sysRc = browseEvents();                  //  queue has to be re-read
       if( sysRc != 0 )                         //
       {                                        //
         goto _door;                            //
       }                                        //
-    }
-                                        //
+    }                                          //
+                                               //
     // -----------------------------------------------------
     // list events on html
     // -----------------------------------------------------
-    sysRc = printAllEventTable( wwwDir );      //
-    if( sysRc != 0 )              //
-    {                          //
-      goto _door;              //
-    }                          //
-                    //
-    sleep(1);      //
-  }                              //
-                                    //
+    sysRc = printAllEventTable( wwwDir );      // write data to the WWW-interface 
+    if( sysRc != 0 )                    //  directory
+    {                                          //
+      goto _door;                    //
+    }                                        //
+                                        //
+    sleep(1);                //
+  }                                           //
+                                              //
   _door :
 
   logFuncExit( ) ;

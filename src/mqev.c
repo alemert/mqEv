@@ -317,7 +317,7 @@ int handleDoneEvents()
   if( sysRc == 0 )
   {
     cnt=0;
-    while( memcmp(msgIdPair[cnt],MQMI_NONE,sizeof(MQBYTE24)) == 0 )
+    while( memcmp(msgIdPair[cnt],MQMI_NONE,sizeof(MQBYTE24)) != 0 )
     {
       cnt++; 
     }
@@ -458,7 +458,12 @@ int moveMessages( PMQBYTE24 _msgIdArray, int _getQueue, int _putQueue )
   switch( sysRc )                         //
   {                                       //
     case MQRC_NONE : break;               //
-    default        : goto _door;          //
+    case MQRC_NO_EXTERNAL_PARTICIPANTS:   // MQ only, no external participants 
+    {                                     //  to avoid evaluating RC in calling
+      sysRc = MQRC_NONE;                  // functions set sysRc to 0
+      break;                              //
+    }                                     //
+    default : goto _door;                 //
   }                                       //
                                           //
   _door:
