@@ -96,7 +96,7 @@ int consoleWorker()
   // -------------------------------------------------------
   // browse messages in input queue
   // -------------------------------------------------------
-  browseEvents();
+  browseEvents( _gohStoreQueue );
 
   handleDoneEvents();
 
@@ -113,7 +113,7 @@ int consoleWorker()
 
 
 /******************************************************************************/
-/*  html worker                        */
+/*  HTML worker                              */
 /******************************************************************************/
 int htmlWorker()
 {
@@ -140,9 +140,18 @@ int htmlWorker()
   while( 1 )                                   //
   {                                            //
     // -----------------------------------------------------
-    // browse messages in input queue
+    // accept messages
     // -----------------------------------------------------
-    sysRc = browseEvents();                    // browse events 
+    sysRc = acceptMessages();                  // wait for messages on the 
+    if( sysRc != 0 )                           //  collect queue and move them 
+    {                                          //  to the store queue
+      goto _door;                              //
+    }                                          //
+                      //
+    // -----------------------------------------------------
+    // browse messages in the store queue
+    // -----------------------------------------------------
+    sysRc = browseEvents( _gohStoreQueue );    // browse events 
     if( sysRc != 0 )                           //
     {                                          //
       goto _door;                              //
@@ -158,7 +167,7 @@ int htmlWorker()
     }                                          //
     else if( sysRc < 0 )                       // handleDoneEvents moved some 
     {                                          //  events, therefor the collect 
-      sysRc = browseEvents();                  //  queue has to be re-read
+      sysRc = browseEvents( _gohStoreQueue );  //  queue has to be re-read
       if( sysRc != 0 )                         //
       {                                        //
         goto _door;                            //
@@ -169,9 +178,9 @@ int htmlWorker()
     // list events on html
     // -----------------------------------------------------
     sysRc = printAllEventTable( wwwDir );      // write data to the WWW-interface 
-    if( sysRc != 0 )                    //  directory
+    if( sysRc != 0 )                           //  directory
     {                                          //
-      goto _door;                    //
+      goto _door;                            //
     }                                        //
                                         //
     sleep(1);                //
@@ -196,37 +205,51 @@ int ackWorker( )
 
   searchIni = getIniNode("system", "html"); // system.html node from ini
   wwwDir = getIniStrValue(searchIni,"dir"); // get file & level from node
-  if( !wwwDir )                        //
-  {                                  //
-    sysRc = 1;                    //
-    goto _door;                    //
-  }                              //
-                                //
+  if( !wwwDir )                             //
+  {                                         //
+    sysRc = 1;                              //
+    goto _door;                             //
+  }                                         //
+                                            //
+  // -------------------------------------------------------  
+  // initialize MQ
+  // -------------------------------------------------------  
   sysRc = initMq();                       // connect to queue manager 
   if( sysRc != 0 )                        // and open the queues
   {                                       // handle mq errors
     goto _door;                           //
   }                                       //
                                           //
+  // -------------------------------------------------------  
+  // acknowledge messages 
+  // -------------------------------------------------------  
   sysRc = acknowledgeMessages( );         // acknowledge messages through 
-  if( sysRc != 0 )                  // moving them from collection to acknowledge queue
-  {                              //
+  if( sysRc != 0 )                        //  moving them from store to the 
+  {                                       //  acknowledge queue
     goto _door;                           //
-  }                                //
+  }                                       //
                                           //
-  sysRc = browseEvents();      //
-  if( sysRc != 0 )                  //
-  {                                  //
-    goto _door;                    //
-  }                            //
-                              //
-  endMq();                          // ignore reason, end of program
-                              //
+  // -------------------------------------------------------  
+  // browse rest messages 
+  // -------------------------------------------------------  
+  sysRc = browseEvents( _gohStoreQueue ); //
+  if( sysRc != 0 )                        //
+  {                                       //
+    goto _door;                           //
+  }                                       //
+                                          //
+#if(0)                                    //
+  endMq();                                // ignore reason, end of program
+#endif                                    //
+                                          //
+  // -------------------------------------------------------  
+  // data output
+  // -------------------------------------------------------  
   sysRc = printAllEventTable( wwwDir );   //
-  if( sysRc != 0 )          //
-  {                                  //
-    goto _door;            //
-  }                                  //
+  if( sysRc != 0 )                        //
+  {                                       //
+    goto _door;                           //
+  }                                       //
   _door :                                 // 
   
   logFuncExit( ) ;

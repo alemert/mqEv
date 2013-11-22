@@ -37,6 +37,7 @@
         <in>mqreason.h</in>
         <in>mqtype.h</in>
         <in>node.h</in>
+        <in>process.h</in>
         <in>rename_for_new_project.h</in>
         <in>worker.h</in>
       </df>
@@ -164,6 +165,7 @@
         <in>main.c</in>
         <in>mqev.c</in>
         <in>node.c</in>
+        <in>process.c</in>
         <in>rename_for_new_project.c</in>
         <in>worker.c</in>
       </df>
@@ -267,7 +269,18 @@
           <df name="include">
             <df name="msgcat">
             </df>
+            <in>ctl.rev</in>
+            <in>dumper.rev</in>
+            <in>inihnd.rev</in>
+            <in>mqbase.rev</in>
+            <in>mqdump.rev</in>
+            <in>mqev.rev</in>
+            <in>mqreason.rev</in>
+            <in>mqtype.rev</in>
+            <in>node.rev</in>
+            <in>process.rev</in>
             <in>version.h</in>
+            <in>worker.rev</in>
           </df>
           <df name="obj">
             <df name="gcc">
@@ -278,7 +291,13 @@
             </df>
           </df>
           <df name="src">
+            <in>dumper.rev</in>
+            <in>main.rev</in>
+            <in>mqev.rev</in>
+            <in>node.rev</in>
+            <in>process.rev</in>
             <in>ver4bin.c</in>
+            <in>worker.rev</in>
           </df>
         </df>
       </df>

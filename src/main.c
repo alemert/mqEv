@@ -34,7 +34,11 @@
 #include <msgcat/lgstd.h>
 #include <inihnd.h>
 
+// ---------------------------------------------------------
+// local
+// ---------------------------------------------------------
 #include <worker.h>
+#include <process.h>
 
 /******************************************************************************/
 /*   D E F I N E S                                                            */
@@ -161,6 +165,8 @@ int initPrg( int argc, const char* argv[] )
   if( sysRc != 0 ) goto _door;                     //
                                                    //
   logger(LSTD_PRG_START,basename((char*) argv[0]));//
+                                                   //
+  setSignals( basename((char*) argv[0]) );         //
                                                    //
   _door :
   return sysRc ;

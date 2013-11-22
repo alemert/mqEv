@@ -85,7 +85,7 @@ struct sEvent
 /******************************************************************************/
 /*   G L O B A L E S                                                          */
 /******************************************************************************/
-#ifdef _MQEV_NODE_CPP_
+#ifdef _MQEV_NODE_C_MODULE_
   tQmgrNode *_gEventList = NULL;
 #else
   extern tQmgrNode *_gEventList ;

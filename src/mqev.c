@@ -9,17 +9,18 @@
 /*        - Local Events      LOCALEV(ENABLED)                    */
 /*        - Authority Events  AUTHOREV(ENABLED)                  */
 /*        - Inibit Evnets     INHIBTEV(ENABLED)              */
-/*                                              */
+/*                                                    */
 /*                                                                            */
 /*                                                                            */
 /*   functions:                                                               */
-/*    - initMq                                                          */
-/*    - browseEvents                                                  */
-/*    - printEventList                                    */
-/*    - handleDoneEvents                              */
-/*    - moveMessages                            */
-/*    - msgIdStr2MQbyte                        */
-/*    - acknowledgeMessages                    */
+/*    - initMq                                                              */
+/*    - browseEvents                                                      */
+/*    - printEventList                                        */
+/*    - handleDoneEvents                                  */
+/*    - moveMessages                                */
+/*    - msgIdStr2MQbyte                            */
+/*    - acknowledgeMessages                      */
+/*    - acceptMessages                    */
 /*                                          */
 /******************************************************************************/
 
@@ -50,29 +51,35 @@
 #include <msgcat/lgmqm.h>
 
 #include <inihnd.h>
-
 #include <mqbase.h>
+// ---------------------------------------------------------
+// local
+// ---------------------------------------------------------
+
+#define _MQEV_MQEV_C_MODULE_
 #include <mqev.h>
 
 #include <node.h>
 
+
 /******************************************************************************/
 /*   G L O B A L S                                                            */
 /******************************************************************************/
-  MQHCONN _ghConn ;                      // global connection handle
-
-  MQOD    _godEvQueue={MQOD_DEFAULT};    // global object description and
-  MQHOBJ  _gohEvQueue;                   // object handler  for event queue
-
-  MQOD    _godAckQueue = {MQOD_DEFAULT}; // global object description and
-  MQHOBJ  _gohAckQueue;                  // object handler for acknowledge queue
-
+  MQHCONN _ghConn ;                          // global connection handle
+                                             //
+  MQOD    _godEvQueue={MQOD_DEFAULT};        // global object description and
+  MQHOBJ  _gohEvQueue=MQHO_UNUSABLE_HOBJ;    // object handler  for event queue
+                                             //
+  MQOD    _godAckQueue={MQOD_DEFAULT};       // global object description and
+  MQHOBJ  _gohAckQueue=MQHO_UNUSABLE_HOBJ;   // object handler for acknowledge 
+                                             //  queue
+  MQOD    _godStoreQueue={MQOD_DEFAULT};     // global object description and
+  MQHOBJ  _gohStoreQueue=MQHO_UNUSABLE_HOBJ; // object handler for store queue 
+                                             //
+                                             //
 /******************************************************************************/
 /*   D E F I N E S                                                            */
 /******************************************************************************/
-#define COLLECTION_QUEUE    0
-#define DONE_QUEUE          1
-  
 
 /******************************************************************************/
 /*   M A C R O S                                                              */
@@ -104,7 +111,14 @@ int initMq( )
   char *qmgr = getStrAttr( "qmgr" );       // try to get qmgr name from cmdln
   if( qmgr == NULL )                       // if no qmgr name on cmdln 
   {                                        // try to get it from the ini file
-     qmgr = getIniStrValue( getIniNode("mq","qmgr",NULL), "name" ); 
+     qmgr = getIniStrValue( getIniNode("connect","qmgr",NULL), "name" ); 
+  }                                        //
+                                        //
+  if( qmgr == NULL )      //
+  {                              //
+    logger( LSTD_UNKNOWN_CMDLN_ATTR,"qmgr" );
+    logger( LSTD_UNKNOWN_INI_ATTR  ,   //
+	    "connect - qmgr - name" );     //
   }                                        //
                                            // if no qmgr on cmdln or ini
   sysRc = mqConn( qmgr, &_ghConn );        //   use default qmgr (qmgr==NULL)
@@ -120,14 +134,16 @@ int initMq( )
   char *evQueue = getStrAttr( "queue" );   // get event queue name from cmdln
   if( evQueue == NULL )                    // if not found, get it from ini file
   {                                        //
-    evQueue = getIniStrValue( getIniNode("mq","qmgr","evqueue",NULL), "name" ); 
+    evQueue = getIniStrValue( getIniNode( "connect", "queue",
+					  "collect", NULL)  , 
+			                  "name" ); 
   }                                        //
                                            //
   if( evQueue == NULL )                    // if not found on command line and 
   {                                        // not in ini file abort process
-    logger( LSTD_UNKNOWN_CMDLN_ATTR,"queue");
-    logger( LSTD_UNKNOWN_INI_ATTR  ,       //
-	   "mq - qmgr - evqueue - name" ); //
+    logger( LSTD_UNKNOWN_CMDLN_ATTR_ERR,"queue");
+    logger( LSTD_UNKNOWN_INI_ATTR_ERR  ,   //
+	   "connect - queue - collect - name" ); 
     logger( LSTD_GEN_ERR, __FUNCTION__ );  //
     sysRc = 1 ;                            //
     goto _door;                            //
@@ -151,15 +167,49 @@ int initMq( )
   }                                        //
                                            //
   // -------------------------------------------------------
+  // open store queue
+  // -------------------------------------------------------
+  char* storeQueue = getIniStrValue( getIniNode( "connect", "queue",
+					         "store"  , NULL  ), 
+				                 "name"  ); 
+                                           //
+  if( storeQueue == NULL )                 // if store queue name not 
+  {                                        // found in ini file abort process
+    logger( LSTD_UNKNOWN_INI_ATTR_ERR,     //
+	   "collect - queue - store - name" );
+    logger( LSTD_GEN_ERR, __FUNCTION__ );  //
+    sysRc = 1 ;                            //
+    goto _door;                            //
+  }                                        // set queue name in object 
+                                           //  description structure
+  memset(_godStoreQueue.ObjectName,(int) ' '  ,MQ_Q_NAME_LENGTH);
+  memcpy(_godStoreQueue.ObjectName,storeQueue ,MQ_Q_NAME_LENGTH);
+                                           //
+  sysRc = mqOpenObject(                    //
+              _ghConn                ,     // qmgr connection handle 
+              &_godStoreQueue        ,     // event q object descriptor 
+              MQOO_OUTPUT            |     //   open object for get
+              MQOO_BROWSE            |     //   open for browse
+              MQOO_FAIL_IF_QUIESCING ,     //   open fails if qmgr is stopping
+              &_gohStoreQueue       );     // object handle event queue
+                                           //
+  switch( sysRc )                          // rc mqopen
+  {                                        //
+    case MQRC_NONE : break;                // open ok
+    default        : goto _door ;          // open failed
+  }                                        //
+                                           //
+  // -------------------------------------------------------
   // open acknowledge queue
   // -------------------------------------------------------
-  char* ackQueue = getIniStrValue(         //
-                     getIniNode( "mq","qmgr","ackqueue",NULL), "name" ); 
+  char* ackQueue = getIniStrValue( getIniNode( "collect"    , "queue",
+					       "acknowledge", NULL  ), 
+				               "name" ); 
                                            //
   if( ackQueue == NULL )                   // if acknowledge queue name not 
   {                                        // found in ini file abort process
-    logger( LSTD_UNKNOWN_INI_ATTR,         //
-	   "mq - qmgr - ackqueue - name" );//
+    logger( LSTD_UNKNOWN_INI_ATTR_ERR,     //
+	   "collect - queue - acknowledge - name" );
     logger( LSTD_GEN_ERR, __FUNCTION__ );  //
     sysRc = 1 ;                            //
     goto _door;                            //
@@ -190,32 +240,36 @@ int initMq( )
 }
 
 /******************************************************************************/
-/*  end MQ                     */
+/*  end MQ                                                     */
 /******************************************************************************/
 void endMq()
 {
   logFuncCall( ) ;
 
-
-  if( _gohEvQueue != MQHO_UNUSABLE_HOBJ )
-  {
-    mqCloseObject( _ghConn, &_gohEvQueue );  // ignore reason, end of program
-  }
-
-  if( _gohAckQueue != MQHO_UNUSABLE_HOBJ )
-  {
-    mqCloseObject( _ghConn, &_gohAckQueue ); // ignore reason, end of program
-  }
-
-  mqDisc( &_ghConn ) ;                       // global connection handle
-
+  if( _gohEvQueue != MQHO_UNUSABLE_HOBJ )      // close event queue if open
+  {                                            //
+    mqCloseObject( _ghConn, &_gohEvQueue );    // ignore reason, end of program
+  }                                            //
+                                               //
+  if( _gohAckQueue != MQHO_UNUSABLE_HOBJ )     // close acknowledge queue if
+  {                                            //  open
+    mqCloseObject( _ghConn, &_gohAckQueue );   // ignore reason, end of program
+  }                                            //
+                                               //
+  if( _gohStoreQueue != MQHO_UNUSABLE_HOBJ )   // close store queue if open
+  {                                            //
+    mqCloseObject( _ghConn, &_gohStoreQueue ); // ignore reason, end of program
+  }                                            //
+                                               //
+  mqDisc( &_ghConn ) ;                         // global connection handle
+                                               //
   logFuncExit( ) ;
 }
 
 /******************************************************************************/
-/* browse events                                              */
+/* browse events                                                        */
 /******************************************************************************/
-int browseEvents( )
+int browseEvents( MQHOBJ _ohQ )
 {
   logFuncCall( ) ;
   int sysRc = 0 ;
@@ -253,7 +307,7 @@ int browseEvents( )
   while( reason != MQRC_NO_MSG_AVAILABLE )    // browse all available messages
   {                                           //
     reason = mqReadBag( _ghConn    ,          // global (qmgr) connect handle
-                        _gohEvQueue,          // globale (queue) open handle
+                        _ohQ       ,          // globale (queue) open handle
                         &evMsgDscr ,          // message descriptor
                         &getMsgOpt ,          // get message options
                          evBag    );          // bag
@@ -296,7 +350,7 @@ int browseEvents( )
 }
 
 /******************************************************************************/
-/*  handle done events                            */
+/*  handle done events                                        */
 /******************************************************************************/
 int handleDoneEvents()
 {
@@ -308,7 +362,7 @@ int handleDoneEvents()
 
   msgIdPair = getMsgIdPair();
   
-  sysRc = moveMessages( msgIdPair, COLLECTION_QUEUE, DONE_QUEUE );
+  sysRc = moveMessages( msgIdPair, _gohStoreQueue, _gohAckQueue );
   if( sysRc != 0 )
   {
     goto _door;
@@ -331,9 +385,9 @@ int handleDoneEvents()
 }
 
 /******************************************************************************/
-/*   move messages                                                  */
+/*   move messages                                                        */
 /******************************************************************************/
-int moveMessages( PMQBYTE24 _msgIdArray, int _getQueue, int _putQueue )
+int moveMessages( PMQBYTE24 _msgIdArray, MQHOBJ _getoh, MQHOBJ _putoh )
 {
   logFuncCall( ) ;
 
@@ -400,11 +454,11 @@ int moveMessages( PMQBYTE24 _msgIdArray, int _getQueue, int _putQueue )
         case MQRC_NONE :                  //
 	{                                 //
           loop = 0;                       //
-	  break;                       // ok
-	}                               //
+	  break;                          // ok
+	}                                 //
         case MQRC_NO_MSG_AVAILABLE :      // this can only occur, if message is
         {                                 //  moved to acknowledge queue 
-	  loop = -1;                //
+	  loop = -1;                      //
           break;                          //  manually at the same time
         }                                 //
         case MQRC_TRUNCATED_MSG_FAILED :  // message buffer to small for 
@@ -420,7 +474,7 @@ int moveMessages( PMQBYTE24 _msgIdArray, int _getQueue, int _putQueue )
 	}                                 //
       }                                   //
     }                                     //
-    if( loop == -1 )                //
+    if( loop == -1 )                      //
     {                                     //
       msgId++;                            //
       continue;                           //
@@ -430,7 +484,7 @@ int moveMessages( PMQBYTE24 _msgIdArray, int _getQueue, int _putQueue )
     // write the same message to done queue
     // -----------------------------------------------------  
     pmo.Options=MQPMO_FAIL_IF_QUIESCING + //
-	         MQPMO_NO_CONTEXT       + //
+	        MQPMO_NO_CONTEXT        + //
                 MQPMO_SYNCPOINT         ; //
     reason = mqPut( _ghConn     ,         // connection handle
                     _gohAckQueue,         // pointer to queue handle
@@ -472,7 +526,7 @@ int moveMessages( PMQBYTE24 _msgIdArray, int _getQueue, int _putQueue )
 }
 
 /******************************************************************************/
-/*  message id string to MQBYTE24                  */
+/*  message id string to MQBYTE24                            */
 /******************************************************************************/
 void msgIdStr2MQbyte( char* _str, PMQBYTE24 _pmsgid )
 {
@@ -497,7 +551,7 @@ void msgIdStr2MQbyte( char* _str, PMQBYTE24 _pmsgid )
 }
 
 /******************************************************************************/
-/*  acknowledge messages            */
+/*  acknowledge messages                                        */
 /******************************************************************************/
 MQLONG acknowledgeMessages()
 {
@@ -537,18 +591,132 @@ MQLONG acknowledgeMessages()
   }                                       //
   memcpy( (msgId24+1), MQMI_NONE, sizeof(MQBYTE24) );
                                           //
-  sysRc = moveMessages( msgId24         , // move messages from collect queue
-		        COLLECTION_QUEUE, // including mqBegin and mqCommit
-		        DONE_QUEUE     ); //
-  if( sysRc != 0 )                      //
-  {                                 //
-    goto _door;                      //
-  }                        //
-                                //
+  sysRc = moveMessages( msgId24       ,   // move messages from collect queue
+		        _gohStoreQueue,   // including mqBegin and mqCommit
+		        _gohAckQueue );   //
+  if( sysRc != 0 )                        //
+  {                                       //
+    goto _door;                           //
+  }                                       //
+                                          //
   _door :                                 // 
                                           //
-  if( msgId24) free( msgId24 );      //
-                                        //
+  if( msgId24) free( msgId24 );           //
+                                          //
+  logFuncExit( );
+  return sysRc  ;
+}
+
+/******************************************************************************/
+/*  accept messages                  */
+/******************************************************************************/
+MQLONG acceptMessages()
+{
+  logFuncCall( ) ;
+  MQLONG sysRc ;
+
+  MQLONG reason;                  //
+                                  //
+  MQMD  md  = {MQMD_DEFAULT} ;    // message descriptor (set to default)
+  MQGMO gmo = {MQGMO_DEFAULT};    // get message option set to default
+  MQPMO pmo = {MQPMO_DEFAULT};    // put message option set to default
+                                  //
+  static PMQVOID *buffer = NULL;  // message buffer
+  static MQLONG  msgLng  = 512;   // message length
+                                  //
+  int loop;                       //
+                                  //
+  // -------------------------------------------------------  
+  // initialize mq calls and open transaction
+  // -------------------------------------------------------  
+  if( !buffer )                           // message buffer has to be allocated 
+  {                                       // on first call of this function
+    buffer = (PMQVOID) malloc( msgLng );  //
+  }                                       //
+                                          //
+  gmo.MatchOptions = MQMO_MATCH_MSG_ID;   // 
+  gmo.Options      = MQGMO_CONVERT   +    //
+                     MQGMO_SYNCPOINT +    //
+                     MQGMO_WAIT     ;     //
+  gmo.Version      = MQGMO_VERSION_3;     //
+                                          //
+  md.Version = MQMD_VERSION_2;            //
+                                          //
+  sysRc = mqBegin( _ghConn );             // begin transaction
+  switch( sysRc )                         //
+  {                                       //
+    case MQRC_NONE :                      //
+    case MQRC_NO_EXTERNAL_PARTICIPANTS :  // transactions without external 
+    {                                     //  resource manager
+      break;                              //
+    }                                     //
+    default : goto _door;                 //
+  }                                       //
+                                          //
+  loop = 1;                               // MQGET in the loop because using signals
+  while( loop )                           //
+  {                                       //
+    if( checkSignal() ) break;      // break out of the loop for any reason
+                            //
+    reason = mqGet( _ghConn    ,     // connection handle
+                    _gohEvQueue,     // pointer to queue handle
+                    buffer     ,     // message buffer
+                    &msgLng    ,     // buffer length
+                    &md        ,     // msg Desriptor
+                    gmo        ,     // get message option
+                    500       );     //  wait interval
+                                          //
+    switch( reason )                      //
+    {                                     //
+      case MQRC_NONE   :                  //
+      {                                   //
+	loop=0;              //
+        break;                            // ok
+      }                                   //
+      case MQRC_NO_MSG_AVAILABLE :      // this can only occur, if message is
+      {                                   //  moved to acknowledge queue 
+        continue;                         //  manually at the same time
+      }                                   //
+      case MQRC_TRUNCATED_MSG_FAILED :  // message buffer to small for 
+      {                                   //  the physical message, 
+        logMQCall(WAR,"MQGET",reason);  //  resize (realloc) the buffer
+        buffer = resizeMqMessageBuffer( buffer, &msgLng );
+        continue;                         //
+      }                                   //
+      default :                           // real error (stopping qmgr)
+      {                                   //
+        sysRc = reason;                 //
+        goto _door;                     //
+      }                                   //
+    }                                     //
+  }                    //
+                      //
+  // -----------------------------------------------------  
+  // write the same message to done queue
+  // -----------------------------------------------------  
+  pmo.Options=MQPMO_FAIL_IF_QUIESCING + //
+              MQPMO_NO_CONTEXT        + //
+              MQPMO_SYNCPOINT         ; //
+                        //
+  reason = mqPut( _ghConn       ,         // connection handle
+                  _gohStoreQueue,         // pointer to queue handle
+                  &md           ,         // message descriptor
+                  &pmo          ,         // Options controlling MQPUT
+                  buffer        ,         // message buffer
+                  msgLng       );         // message length (buffer length)
+                            //
+  switch( reason )                        //
+  {                                       //
+    case MQRC_NONE : break;             //
+    default :                             //
+    {                                     //
+      sysRc = reason;                     //
+      goto _door;                         //
+    }                                     //
+  }                                       //
+                            //
+  _door :                                 //
+
   logFuncExit( );
   return sysRc  ;
 }
