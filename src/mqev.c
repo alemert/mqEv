@@ -82,6 +82,7 @@
 /******************************************************************************/
 /*   D E F I N E S                                                            */
 /******************************************************************************/
+#define INITIAL_MESSAGE_LENGTH      512
 
 /******************************************************************************/
 /*   M A C R O S                                                              */
@@ -393,19 +394,20 @@ int moveMessages( PMQBYTE24 _msgIdArray, MQHOBJ _getoh, MQHOBJ _putoh )
 {
   logFuncCall( ) ;
 
-  MQMD  md  = {MQMD_DEFAULT} ;    // message descriptor (set to default)
-  MQGMO gmo = {MQGMO_DEFAULT};    // get message option set to default
-  MQPMO pmo = {MQPMO_DEFAULT};    // put message option set to default
-                                  //
-  static PMQVOID *buffer = NULL;  // message buffer
-  static MQLONG  msgLng  = 512;   // message length
-                                  //
-  PMQBYTE24 msgId;                // array with all messages to moved
-                                  //
-  MQLONG reason;                  // mq reason
-                                  //
-  int sysRc = 0 ;                 // system reason
-                                  //
+  MQMD  md  = {MQMD_DEFAULT} ;        // message descriptor (set to default)
+  MQGMO gmo = {MQGMO_DEFAULT};        // get message option set to default
+  MQPMO pmo = {MQPMO_DEFAULT};        // put message option set to default
+                                      //
+  static PMQVOID *buffer = NULL;      // message buffer
+  static MQLONG  msgLng  = INITIAL_MESSAGE_LENGTH;    // message length
+  static MQLONG  bufferSize=INITIAL_MESSAGE_LENGTH; // maximal message length
+                                      //
+  PMQBYTE24 msgId;                    // array with all messages to moved
+                                      //
+  MQLONG reason;                      // mq reason
+                                      //
+  int sysRc = 0 ;                     // system reason
+                                      //
   // -------------------------------------------------------  
   // initialize mq calls and open transaction
   // -------------------------------------------------------  
@@ -466,7 +468,8 @@ int moveMessages( PMQBYTE24 _msgIdArray, MQHOBJ _getoh, MQHOBJ _putoh )
         case MQRC_TRUNCATED_MSG_FAILED :  // message buffer to small for 
         {                                 //  the physical message, 
           logMQCall(WAR,"MQGET",reason);  //  resize (realloc) the buffer
-          buffer = resizeMqMessageBuffer( buffer, &msgLng );
+	  bufferSize = msgLng ;           //
+          buffer = resizeMqMessageBuffer( buffer, &bufferSize );
           continue;                       //
         }                                 //
         default :                         // real error (stopping qmgr)
@@ -610,24 +613,25 @@ MQLONG acknowledgeMessages()
 }
 
 /******************************************************************************/
-/*  accept messages                        */
+/*  accept messages                              */
 /******************************************************************************/
 MQLONG acceptMessages()
 {
   logFuncCall( ) ;
   MQLONG sysRc ;
 
-  MQLONG reason;                  //
-                                  //
-  MQMD  md  = {MQMD_DEFAULT} ;    // message descriptor (set to default)
-  MQGMO gmo = {MQGMO_DEFAULT};    // get message option set to default
-  MQPMO pmo = {MQPMO_DEFAULT};    // put message option set to default
-                                  //
-  static PMQVOID *buffer = NULL;  // message buffer
-  static MQLONG  msgLng  = 512;   // message length
-                                  //
-  int loop;                       //
-                                  //
+  MQLONG reason;                        //
+                                        //
+  MQMD  md  = {MQMD_DEFAULT} ;          // message descriptor (set to default)
+  MQGMO gmo = {MQGMO_DEFAULT};          // get message option set to default
+  MQPMO pmo = {MQPMO_DEFAULT};          // put message option set to default
+                                        //
+  static PMQVOID *buffer = NULL;        // message buffer
+  static MQLONG  msgLng  = INITIAL_MESSAGE_LENGTH;    // message length
+  static MQLONG  bufferSize = INITIAL_MESSAGE_LENGTH; // maximal message length
+                                        //
+  int loop;                             //
+                                        //
   // -------------------------------------------------------  
   // initialize mq calls and open transaction
   // -------------------------------------------------------  
@@ -644,12 +648,13 @@ MQLONG acceptMessages()
                                           //
   md.Version = MQMD_VERSION_2;            //
                                           //
-  sysRc = mqBegin( _ghConn );             // begin transaction
-  switch( sysRc )                         //
+  reason = mqBegin( _ghConn );             // begin transaction
+  switch( reason )                         //
   {                                       //
     case MQRC_NONE :                      //
     case MQRC_NO_EXTERNAL_PARTICIPANTS :  // transactions without external 
     {                                     //  resource manager
+      sysRc = MQRC_NONE;
       break;                              //
     }                                     //
     default : goto _door;                 //
@@ -677,12 +682,14 @@ MQLONG acceptMessages()
       }                                   //
       case MQRC_NO_MSG_AVAILABLE :        // no message available, necessary 
       {                                   //  for catching signals
+	sysRc = reason;
         goto _commit;                     //
       }                                   //
       case MQRC_TRUNCATED_MSG_FAILED :    // message buffer to small for 
       {                                   //  the physical message, 
         logMQCall(WAR,"MQGET",reason);    //  resize (realloc) the buffer
-        buffer = resizeMqMessageBuffer( buffer, &msgLng );
+	bufferSize = msgLng;
+        buffer = resizeMqMessageBuffer( buffer, &bufferSize );
         continue;                         //
       }                                   //
       default :                           // real error (stopping qmgr)
@@ -721,8 +728,8 @@ MQLONG acceptMessages()
   // commit transaction
   // -------------------------------------------------------  
   _commit :
-  mqCommit( _ghConn );                    //
-  switch( sysRc )                         //
+  reason = mqCommit( _ghConn );                    //
+  switch( reason )                         //
   {                                       //
     case MQRC_NONE : break;               //
     case MQRC_NO_EXTERNAL_PARTICIPANTS:   // MQ only, no external participants 
@@ -730,7 +737,11 @@ MQLONG acceptMessages()
       sysRc = MQRC_NONE;                  // functions set sysRc to 0
       break;                              //
     }                                     //
-    default : goto _door;                 //
+    default : 
+    {
+      sysRc = reason;
+      goto _door;                 //
+    }
   }                                       //
   _door :                                 //
 

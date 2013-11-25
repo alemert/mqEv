@@ -156,7 +156,7 @@ int htmlWorker()
         default                    : goto _door;
       }                                        //
     }                                          //
-    while( sysRc != MQRC_NO_MSG_AVAILABLE );   //
+    while( sysRc == MQRC_NO_MSG_AVAILABLE );   //
                                                //
     // -----------------------------------------------------
     // browse messages in the store queue
