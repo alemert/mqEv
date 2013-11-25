@@ -33,6 +33,7 @@
 // ---------------------------------------------------------
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 // ---------------------------------------------------------
 // mq
@@ -60,6 +61,7 @@
 #include <mqev.h>
 
 #include <node.h>
+#include <process.h>
 
 
 /******************************************************************************/
@@ -113,11 +115,11 @@ int initMq( )
   {                                        // try to get it from the ini file
      qmgr = getIniStrValue( getIniNode("connect","qmgr",NULL), "name" ); 
   }                                        //
-                                        //
-  if( qmgr == NULL )      //
-  {                              //
+                                           //
+  if( qmgr == NULL )                       //
+  {                                        //
     logger( LSTD_UNKNOWN_CMDLN_ATTR,"qmgr" );
-    logger( LSTD_UNKNOWN_INI_ATTR  ,   //
+    logger( LSTD_UNKNOWN_INI_ATTR    ,     //
 	    "connect - qmgr - name" );     //
   }                                        //
                                            // if no qmgr on cmdln or ini
@@ -202,14 +204,14 @@ int initMq( )
   // -------------------------------------------------------
   // open acknowledge queue
   // -------------------------------------------------------
-  char* ackQueue = getIniStrValue( getIniNode( "collect"    , "queue",
+  char* ackQueue = getIniStrValue( getIniNode( "connect"    , "queue",
 					       "acknowledge", NULL  ), 
 				               "name" ); 
                                            //
   if( ackQueue == NULL )                   // if acknowledge queue name not 
   {                                        // found in ini file abort process
     logger( LSTD_UNKNOWN_INI_ATTR_ERR,     //
-	   "collect - queue - acknowledge - name" );
+	   "connect - queue - acknowledge - name" );
     logger( LSTD_GEN_ERR, __FUNCTION__ );  //
     sysRc = 1 ;                            //
     goto _door;                            //
@@ -608,7 +610,7 @@ MQLONG acknowledgeMessages()
 }
 
 /******************************************************************************/
-/*  accept messages                  */
+/*  accept messages                        */
 /******************************************************************************/
 MQLONG acceptMessages()
 {
@@ -653,68 +655,83 @@ MQLONG acceptMessages()
     default : goto _door;                 //
   }                                       //
                                           //
-  loop = 1;                               // MQGET in the loop because using signals
-  while( loop )                           //
+  loop = 1;                               // MQGET in the loop since 
+  while( loop )                           //  using signals
   {                                       //
-    if( checkSignal() ) break;      // break out of the loop for any reason
-                            //
-    reason = mqGet( _ghConn    ,     // connection handle
-                    _gohEvQueue,     // pointer to queue handle
-                    buffer     ,     // message buffer
-                    &msgLng    ,     // buffer length
-                    &md        ,     // msg Desriptor
-                    gmo        ,     // get message option
-                    500       );     //  wait interval
+    if( checkSignal() ) break;            // break out of the loop for any reason
+                                          //
+    reason = mqGet( _ghConn    ,          // connection handle
+                    _gohEvQueue,          // pointer to queue handle
+                    buffer     ,          // message buffer
+                    &msgLng    ,          // buffer length
+                    &md        ,          // msg Desriptor
+                    gmo        ,          // get message option
+                    500       );          //  wait interval
                                           //
     switch( reason )                      //
     {                                     //
       case MQRC_NONE   :                  //
       {                                   //
-	loop=0;              //
+	loop=0;                           //
         break;                            // ok
       }                                   //
-      case MQRC_NO_MSG_AVAILABLE :      // this can only occur, if message is
-      {                                   //  moved to acknowledge queue 
-        continue;                         //  manually at the same time
+      case MQRC_NO_MSG_AVAILABLE :        // no message available, necessary 
+      {                                   //  for catching signals
+        goto _commit;                     //
       }                                   //
-      case MQRC_TRUNCATED_MSG_FAILED :  // message buffer to small for 
+      case MQRC_TRUNCATED_MSG_FAILED :    // message buffer to small for 
       {                                   //  the physical message, 
-        logMQCall(WAR,"MQGET",reason);  //  resize (realloc) the buffer
+        logMQCall(WAR,"MQGET",reason);    //  resize (realloc) the buffer
         buffer = resizeMqMessageBuffer( buffer, &msgLng );
         continue;                         //
       }                                   //
       default :                           // real error (stopping qmgr)
       {                                   //
-        sysRc = reason;                 //
-        goto _door;                     //
+        sysRc = reason;                   //
+        goto _door;                       //
       }                                   //
     }                                     //
-  }                    //
-                      //
+  }                                  //
+                                    //
   // -----------------------------------------------------  
   // write the same message to done queue
   // -----------------------------------------------------  
   pmo.Options=MQPMO_FAIL_IF_QUIESCING + //
               MQPMO_NO_CONTEXT        + //
               MQPMO_SYNCPOINT         ; //
-                        //
+                                  //
   reason = mqPut( _ghConn       ,         // connection handle
                   _gohStoreQueue,         // pointer to queue handle
                   &md           ,         // message descriptor
                   &pmo          ,         // Options controlling MQPUT
                   buffer        ,         // message buffer
                   msgLng       );         // message length (buffer length)
-                            //
+                                          //
   switch( reason )                        //
   {                                       //
-    case MQRC_NONE : break;             //
+    case MQRC_NONE : break;               //
     default :                             //
     {                                     //
       sysRc = reason;                     //
       goto _door;                         //
     }                                     //
   }                                       //
-                            //
+                                          //
+  // -------------------------------------------------------  
+  // commit transaction
+  // -------------------------------------------------------  
+  _commit :
+  mqCommit( _ghConn );                    //
+  switch( sysRc )                         //
+  {                                       //
+    case MQRC_NONE : break;               //
+    case MQRC_NO_EXTERNAL_PARTICIPANTS:   // MQ only, no external participants 
+    {                                     //  to avoid evaluating RC in calling
+      sysRc = MQRC_NONE;                  // functions set sysRc to 0
+      break;                              //
+    }                                     //
+    default : goto _door;                 //
+  }                                       //
   _door :                                 //
 
   logFuncExit( );

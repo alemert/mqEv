@@ -281,12 +281,6 @@
       </item>
       <item path="var/vers/include/mqtype.rev" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="var/vers/include/msgcat/lgmqe.rev" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="var/vers/include/msgcat/lgmqm.rev" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="var/vers/include/msgcat/lgstd.rev" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="var/vers/include/node.rev" ex="false" tool="3" flavor2="0">
       </item>
       <item path="var/vers/include/process.rev" ex="false" tool="3" flavor2="0">

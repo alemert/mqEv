@@ -62,7 +62,7 @@
 /******************************************************************************/
 
 /******************************************************************************/
-/*  xymon worker                                                */
+/*  xymon worker                                                              */
 /******************************************************************************/
 int xymonWorker( )
 {
@@ -79,7 +79,7 @@ int xymonWorker( )
 }
 
 /******************************************************************************/
-/*  console worker                                              */
+/*  console worker                                                            */
 /******************************************************************************/
 int consoleWorker()
 {
@@ -113,7 +113,7 @@ int consoleWorker()
 
 
 /******************************************************************************/
-/*  HTML worker                              */
+/*  HTML worker                                                               */
 /******************************************************************************/
 int htmlWorker()
 {
@@ -142,12 +142,22 @@ int htmlWorker()
     // -----------------------------------------------------
     // accept messages
     // -----------------------------------------------------
-    sysRc = acceptMessages();                  // wait for messages on the 
-    if( sysRc != 0 )                           //  collect queue and move them 
-    {                                          //  to the store queue
-      goto _door;                              //
+    do
+    {                                          //
+      sysRc = acceptMessages();                // wait for messages on the 
+      switch( sysRc )                          //  collect queue and move them 
+      {                                        //  to the store queue
+        case MQRC_NONE :                       //
+	{                                      //
+          usleep(500);                         // sleep 500 micro seconds for handling signals
+	  break;                               //
+	}                                      //
+        case MQRC_NO_MSG_AVAILABLE : break;    //
+        default                    : goto _door;
+      }                                        //
     }                                          //
-                      //
+    while( sysRc != MQRC_NO_MSG_AVAILABLE );   //
+                                               //
     // -----------------------------------------------------
     // browse messages in the store queue
     // -----------------------------------------------------
@@ -180,12 +190,12 @@ int htmlWorker()
     sysRc = printAllEventTable( wwwDir );      // write data to the WWW-interface 
     if( sysRc != 0 )                           //  directory
     {                                          //
-      goto _door;                            //
-    }                                        //
-                                        //
-    sleep(1);                //
-  }                                           //
-                                              //
+      goto _door;                              //
+    }                                          //
+                                               //
+    sleep(1);                                  //
+  }                                            //
+                                               //
   _door :
 
   logFuncExit( ) ;
