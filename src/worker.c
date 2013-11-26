@@ -120,6 +120,8 @@ int htmlWorker()
   logFuncCall( ) ;
   int sysRc = 0 ;
 
+  int movedMessages = 0;
+
   tIniNode *searchIni ;    // data structure for getting searching in ini files
   char     *wwwDir    ;    // directory for raw html data
 
@@ -144,7 +146,7 @@ int htmlWorker()
     // -----------------------------------------------------
     do
     {                                          //
-      sysRc = acceptMessages();                // wait for messages on the 
+      sysRc = acceptMessages( &movedMessages );// wait for messages on the 
       switch( sysRc )                          //  collect queue and move them 
       {                                        //  to the store queue
         case MQRC_NONE :                       //
@@ -156,7 +158,7 @@ int htmlWorker()
         default                    : goto _door;
       }                                        //
     }                                          //
-    while( sysRc == MQRC_NO_MSG_AVAILABLE );   //
+    while( movedMessages == 0 );               //
                                                //
     // -----------------------------------------------------
     // browse messages in the store queue
