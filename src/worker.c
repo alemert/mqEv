@@ -150,12 +150,12 @@ int htmlWorker()
       switch( sysRc )                          //  collect queue and move them 
       {                                        //  to the store queue
         case MQRC_NONE :                       //
+        case MQRC_NO_MSG_AVAILABLE :           //
 	{                                      //
-          usleep(500);                         // sleep 500 micro seconds for handling signals
-	  break;                               //
+          usleep(500);                         // sleep 500 micro seconds for 
+	  break;                               //  handling signals
 	}                                      //
-        case MQRC_NO_MSG_AVAILABLE : break;    //
-        default                    : goto _door;
+        default : goto _door;                  //
       }                                        //
     }                                          //
     while( movedMessages == 0 );               //

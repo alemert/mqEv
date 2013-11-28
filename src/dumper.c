@@ -223,7 +223,7 @@ const char* getEventItem( tMqiItem *_item )
 }
 
 /******************************************************************************/
-/*  print message description                                              */
+/*  print message description                                                 */
 /******************************************************************************/
 void printMD( PMQMD pmd )
 {
@@ -279,7 +279,7 @@ void printMD( PMQMD pmd )
 
 
 /******************************************************************************/
-/*  mqbyte to string                                        */
+/*  mqbyte to string                                                          */
 /******************************************************************************/
 const char* mqbyte2str( PMQBYTE value, MQLONG lng )
 {
@@ -299,7 +299,7 @@ const char* mqbyte2str( PMQBYTE value, MQLONG lng )
 }
 
 /******************************************************************************/
-/*  print all event in a html table                    */
+/*  print all event in a html table                                           */
 /******************************************************************************/
 int  printAllEventTable( char* dir )
 {
@@ -325,7 +325,7 @@ int  printAllEventTable( char* dir )
 }
 
 /******************************************************************************/
-/*  print queue manager event table                            */
+/*  print queue manager event table                                         */
 /******************************************************************************/
 int printQmgrEventTable( const char *dir, tQmgrNode* qmgrNode )
 {
@@ -334,7 +334,7 @@ int printQmgrEventTable( const char *dir, tQmgrNode* qmgrNode )
   int sysRc = 0;
   FILE *fp ;
 
-  char fileName[NAME_MAX];    // ignore the length of the path 
+  char fileName[NAME_MAX];      // ignore the length of the path 
   char *p;
 
   snprintf( fileName, NAME_MAX-strlen(".event"),   // build a name of the file
@@ -342,25 +342,24 @@ int printQmgrEventTable( const char *dir, tQmgrNode* qmgrNode )
   p = strchr( fileName, ' ' );                     // find 1st blank
   if( p ) sprintf( p, ".event") ;                  // add suffix
                                                    //
-  fp = fopen( fileName, "w" );            //open the file 
-  if( !fp )                                // handle error
+  fp = fopen( fileName, "w" );                     //open the file 
+  if( !fp )                                        // handle error
   {                                                //
     logger( LSTD_OPEN_FILE_FAILED, fileName );     //
-    sysRc = 1;                                  //
-    goto _door;                    //
-  }                                              //
-                                                  //
-  printEventTopLine( fp, "Message Id"   ,       //
-                         "Date/Time"    ,       //
-                         "MQIASY_REASON",       //
-                         
-                         "Description" );       //
-                                   //
+    sysRc = 1;                                     //
+    goto _door;                                    //
+  }                                                //
+                                                   //
+  printEventTopLine( fp, "Message Id"   ,          //
+                         "Date/Time"    ,          //
+                         "MQIASY_REASON",          //
+                         "Description" );          //
+                                                   //
   printEventTableLine( fp, qmgrNode->singleEvent );//
-                                              //
-  fprintf( fp, "\n" );
-  fclose( fp );                    //
-                                                //
+                                                   //
+  fprintf( fp, "\n" );                             //
+  fclose( fp );                                    //
+                                                   //
   _door:
 
   logFuncExit( ) ;
@@ -369,7 +368,7 @@ int printQmgrEventTable( const char *dir, tQmgrNode* qmgrNode )
 }
 
 /******************************************************************************/
-/*  print evnt table top line      */
+/*  print evnt table top line                                      */
 /******************************************************************************/
 void fPrintEventTopLine( FILE *fp, int nr, ... )
 {
@@ -395,7 +394,7 @@ void fPrintEventTopLine( FILE *fp, int nr, ... )
 }
 
 /******************************************************************************/
-/*  print queue manager event table line                         */
+/*  print queue manager event table line                                      */
 /******************************************************************************/
 void printEventTableLine( FILE* fp, tEvent* eventList )
 {
@@ -410,7 +409,6 @@ void printEventTableLine( FILE* fp, tEvent* eventList )
  time_t     gmtTime;
  time_t     locTime;
  char       timeStr[64];
- char       gmtStr[64];
  char       locStr[64];
 
  time_t currTime = time(0);
@@ -420,7 +418,6 @@ void printEventTableLine( FILE* fp, tEvent* eventList )
   {
     sprintf( timeStr, "%8.8s%6.6s", event->pmd->PutDate, 
 	                            event->pmd->PutTime);
-    printf( "%s\n", gmtStr );
     strptime( timeStr, "%Y%m%d%H%M%S", &gmtTs);
     gmtTime = mktime( &gmtTs );
     locTime = gmtTime - utcOffset;

@@ -1,19 +1,20 @@
 /******************************************************************************/
 /*                             M Q   E V E N T S                              */
 /*                                                                            */
-/*  description:                                                  */
-/*    start program :                                          */
-/*      from cmd line                                    */
-/*      triggered from qmgr                          */
+/*  description:                                                              */
+/*    start program :                                                  */
+/*      from cmd line                                            */
+/*      triggered from qmgr                                */
 /*    read (browse) mq events from some event queue            */
-/*    analyse the event                                          */
+/*    analyse the event                                                  */
 /*    show event on the console or send it to the xymon            */
-/*    rotate monitoring                                      */
-/*                                                        */
-/*    functions:                      */
-/*      - main                                */
-/*      - initPrg                      */
-/*                        */
+/*    rotate monitoring                                              */
+/*                                                                */
+/*    functions:                              */
+/*      - main                                        */
+/*      - initPrg                              */
+/*      - background                                  */
+/*                                    */
 /******************************************************************************/
 
 /******************************************************************************/
@@ -25,6 +26,8 @@
 // ---------------------------------------------------------
 #include <stdio.h>
 #include <libgen.h>
+#include <unistd.h>
+#include <string.h>
 
 // ---------------------------------------------------------
 // own 
@@ -52,6 +55,7 @@
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
 int initPrg( int argc, const char* argv[] ) ;
+int background();
 
 /******************************************************************************/
 /*                                                                            */
@@ -111,9 +115,9 @@ int main(int argc, const char* argv[] )
 /******************************************************************************/
 
 /******************************************************************************/
-/*  init program                                                */
-/*    - analyse cmdln attributes                                */
-/*    - setup logging                                    */
+/*  init program                                                      */
+/*    - analyse cmdln attributes                                    */
+/*    - setup logging                                        */
 /******************************************************************************/
 int initPrg( int argc, const char* argv[] )
 {
@@ -168,8 +172,51 @@ int initPrg( int argc, const char* argv[] )
                                                    //
   setSignals( basename((char*) argv[0]) );         //
                                                    //
+  // -------------------------------------------------------
+  // send process to background
+  // -------------------------------------------------------
+  tIniNode *searchIni ;                            //
+  searchIni = getIniNode( "system" );              // system node from ini
+  char *daemonFlag = getIniStrValue( searchIni,"daemon" );// get daemon flag
+  if( !daemonFlag ) goto _door;
+  if( strcmp( daemonFlag, "yes") == 0 )
+  {
+    sysRc = background();
+    if( sysRc != 0 )
+    {
+      goto _door;
+    }
+  }
+
+
   _door :
   return sysRc ;
 }
 
+/******************************************************************************/
+/*  send process to background                          */
+/******************************************************************************/
+int background()
+{
 
+  logger( LSTD_FORK_PROCESS );
+  pid_t pid = fork();
+
+  if( pid == 0 ) 
+  {
+    logger( LSTD_FORK_CHILD );
+    goto _door ;
+  }
+
+  if( pid > 0 ) 
+  {
+    logger( LSTD_FORK_PARENT );
+    exit(0);
+  }
+
+  logger( LSTD_FORK_FAILED );
+  exit(1);
+
+  _door:
+  return pid ;
+}
