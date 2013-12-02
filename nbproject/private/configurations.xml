@@ -18,6 +18,12 @@
         <df name="ver">
         </df>
       </df>
+      <df name="html">
+        <df name="cgi">
+        </df>
+        <df name="css">
+        </df>
+      </df>
       <df name="include">
         <df name="etc">
         </df>
@@ -268,6 +274,9 @@
         <df name="vers">
           <df name="include">
             <df name="msgcat">
+              <in>lgmqe.rev</in>
+              <in>lgmqm.rev</in>
+              <in>lgstd.rev</in>
             </df>
             <in>ctl.rev</in>
             <in>dumper.rev</in>
