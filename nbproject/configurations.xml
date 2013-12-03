@@ -2,6 +2,11 @@
 <configurationDescriptor version="89">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="mqEv">
+      <df name="html">
+        <df name="cgi">
+          <in>index.cgi</in>
+        </df>
+      </df>
       <df name="include">
         <df name="msgcat">
           <in>lgmqe.h</in>
@@ -148,6 +153,8 @@
           </incDir>
         </cTool>
       </folder>
+      <item path="html/cgi/index.cgi" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/ctl.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/dumper.h" ex="false" tool="3" flavor2="0">

@@ -12,6 +12,7 @@ use CGI qw(:standard);
 use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 
 use top ;
+use qmgr ;
 
 ################################################################################
 #   G L O B A L S  
@@ -25,6 +26,8 @@ my %menu =
  2=> { "cmd"  => "report",
        "dscr" => "event reports" }
 );
+
+my $wwwDir = "/var/mq_misc/www/" ;
 
 ################################################################################
 #   C O M M A N D   L I N E  
@@ -49,13 +52,16 @@ foreach my $pair (@attrPairs)
 #   M A I N  
 ################################################################################
 
-openHeader "/develop/css", "top.css" ;
+openHeader "/develop/css", "top.css", "qmgr.css";
 #foreach my $key (keys %attr )
 #{
 #  print "$key $attr{$key}<br>\n";
 #}
 my $active = "" ;
 $active = $attr{cmd} if( exists $attr{cmd} ) ;
-openTop $active, \%menu;
-closeTop ;
+showTop $active, \%menu;
+
+my $_qmgr = readEventFiles $wwwDir ;
+showQmgr $_qmgr ;
+
 closeHeader ;

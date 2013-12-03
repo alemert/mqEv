@@ -193,6 +193,7 @@ int initMq( )
               &_godStoreQueue        ,     // event q object descriptor 
               MQOO_OUTPUT            |     //   open object for get
               MQOO_BROWSE            |     //   open for browse
+              MQOO_SET_ALL_CONTEXT   |     //   keep original date/time im MQMD
               MQOO_FAIL_IF_QUIESCING ,     //   open fails if qmgr is stopping
               &_gohStoreQueue       );     // object handle event queue
                                            //
@@ -226,6 +227,7 @@ int initMq( )
               &_godAckQueue          ,     // event q object descriptor 
               MQOO_OUTPUT            |     //   open object for get
               MQOO_BROWSE            |     //   open for browse
+              MQOO_SET_ALL_CONTEXT   |     //   keep original date/time im MQMD
               MQOO_FAIL_IF_QUIESCING ,     //   open fails if qmgr is stopping
               &_gohAckQueue         );     // object handle event queue
                                            //
@@ -751,7 +753,8 @@ MQLONG acceptMessages( int *_movedMessages )
     // write the same message to done queue
     // ---------------------------------------------------  
     pmo.Options=MQPMO_FAIL_IF_QUIESCING + //
-                MQPMO_NO_CONTEXT        + //
+  //            MQPMO_NO_CONTEXT        + //
+                MQPMO_SET_ALL_CONTEXT   + // for keeping old time / date
                 MQPMO_SYNCPOINT         ; //
                                           //
     reason = mqPut( _ghConn       ,       // connection handle

@@ -20,6 +20,7 @@
       </df>
       <df name="html">
         <df name="cgi">
+          <in>index.cgi</in>
         </df>
         <df name="css">
         </df>

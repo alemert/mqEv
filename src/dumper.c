@@ -431,7 +431,9 @@ void printEventTableLine( FILE* fp, tEvent* eventList )
 
     fprintf( fp, "%8.8s%6.6s\t", event->pmd->PutDate, 
 	                         event->pmd->PutTime );
-    
+
+    fprintf( fp, "%s\t", locStr );
+
     item = findMqiItem( event->item, MQIASY_REASON ) ;
     itemStr = (char*) getEventItem( item );
     fprintf( fp, "%s", itemStr );

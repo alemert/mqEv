@@ -1,0 +1,20 @@
+/* 
+    Document   : qmgr.css
+    Created on : Dec 03, 2013
+    Author     : mertale
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+* { margin : 0px; padding: 0px;}
+
+div.qmgr-inactive
+{ 
+  position: relative; left : 3px; top : 15px; 
+  width: 80px; height: 20px;
+  margin : 2px; padding 2px;
+  background-color:  #7070ff; 
+  border : 2px solid #000000; border-radius: 4px;
+clear:both;
+}
+
