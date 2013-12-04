@@ -41,12 +41,19 @@ sub readEventFiles
 ################################################################################
 sub showQmgr
 {
-  my $_qmgr = $_[0] ;
+  my $_attr = $_[0] ;
+  my $_qmgr = $_[1] ;
 
+  setHref $_attr ;
+
+  print "<div class=qmgr>\n";
   foreach my $qmgr ( sort keys %$_qmgr )
   {
-    print "<div class=qmgr-inactive><p>$qmgr</p></div>\n";
+    print "<div class=qmgr-inactive><a >\n" ;
+    print "<img class=qmgr src=\"/develop/icons/red-cross-16.png\">$qmgr\n" ;
+    print "</a></div>\n";
   }
+  print "</div>\n";
 
 }
 

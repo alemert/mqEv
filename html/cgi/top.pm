@@ -39,19 +39,21 @@ sub closeHeader
 ################################################################################
 sub showTop
 {
-  my $active = $_[0]; 
-  my $_attr = $_[1];
+  my $_attr = $_[0]; 
+  my $_menu = $_[1];
+
+  my $active = $_attr->{cmd} if( exists $_attr->{cmd} ) ;
 
   print "<div id=main-field>\n";
   print "<div class=top >\n";
-  foreach my $attr (sort keys %$_attr )
+  foreach my $attr (sort keys %$_menu )
   {
-    my $cmd = $_attr->{$attr}{cmd} ;
-    my $dscr = $_attr->{$attr}{dscr} ;
+    my $cmd = $_menu->{$attr}{cmd} ;
+    my $dscr = $_menu->{$attr}{dscr} ;
     my $class="top-inactive";
        $class="top-active" if $cmd eq $active ;
     print "<div class=$class>";
-    print "<a class=$class href=\"http://krpan/develop/mqev/?cmd=$cmd\"> $dscr " ;
+    print "<a class=$class href=\"?cmd=$cmd\"> $dscr " ;
     print "</a></div>\n" ;
   }
   print "</div>\n" ;

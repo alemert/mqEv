@@ -17,7 +17,7 @@ body
 div#main-field 
 { 
   position: relative; left: 8px; top: 8px; 
-  min-width: 600px; min-height: 200px;
+  width: 600px; min-height: 200px;
   background-color:  #fff8c5; 
   border : 2px solid #000000; border-radius: 7px;
 }
