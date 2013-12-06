@@ -45,39 +45,26 @@ sub setHref
 
   my $href = "?" ;
 
+
   if( exists $_attr->{$key} &&
-             $_attr->{key} eq $value )
+             $_attr->{$key} eq $value )
   {
-    delete $_attr->{key};
+    delete $_attr->{$key};
   }
   else
   {
-    $_attr->{key} = $value ;
+    $_attr->{$key} = $value ;
   }
 
   foreach my $attr ( keys %$_attr )
   {
-    $href .= $key.'='.$value.'&' ;
+    $href .= $attr.'='.$_attr->{$attr}.'&amp;' ;
   }
 
-  $href =~ s/&$// ;
+  $href =~ s/\&amp;$// ;
   $href = "" if $href eq "?" ;
 
   return $href ;
 }
 
-################################################################################
-#   M A I N  
-################################################################################
-
-my $_qmgr = readEventFiles $wwwDir ;
-
-openHeader "/develop/css", "top.css", "qmgr.css";
-showTop \%attr, \%menu;
-
-exists %attr->{cmd} &&
-       %attr->{cmd} eq 'open' &&
-       showQmgr \%attr, $_qmgr ;
-
-
-closeHeader ;
+1;

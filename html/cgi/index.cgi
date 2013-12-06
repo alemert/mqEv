@@ -11,8 +11,9 @@ use strict;
 use CGI qw(:standard);
 use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 
+use http;
 use top ;
-use qmgr ;
+use qmgr;
 
 ################################################################################
 #   G L O B A L S  
@@ -33,52 +34,7 @@ my $wwwDir = "/var/mq_misc/www/" ;
 #   C O M M A N D   L I N E  
 ################################################################################
 
-my $urlAttr =  $ENV{'QUERY_STRING'};
-
-$ENV{'REQUEST_METHOD'} =~ tr/a-z/A-Z/;
-
-my %attr;
-my @attrPairs = split /&/, $urlAttr ;
-foreach my $pair (@attrPairs)
-{
-  chomp $pair ;
-  $pair =~ /^(.+)=(.+)$/;
-  my $key = $1 ;
-  my $val = $2 ;
-  $attr{$key} = $val ;
-} 
-
-################################################################################
-#
-################################################################################
-sub setHref
-{
-  my $_attr = $_[0] ;
-  my $key = $_[1] ;
-  my $value = $_[2] ;
-
-  my $href = "?" ;
-
-  if( exists $_attr->{$key} &&
-             $_attr->{key} eq $value )
-  {
-    delete $_attr->{key};
-  }
-  else
-  {
-    $_attr->{key} = $value ;
-  }
-
-  foreach my $attr ( keys %$_attr )
-  {
-    $href .= $key.'='.$value.'&' ;
-  }
-
-  $href =~ s/&$// ;
-  $href = "" if $href eq "?" ;
-
-  return $href ;
-}
+my $_attr = cmdLn ;
 
 ################################################################################
 #   M A I N  
@@ -86,12 +42,13 @@ sub setHref
 
 my $_qmgr = readEventFiles $wwwDir ;
 
-openHeader "/develop/css", "top.css", "qmgr.css";
-showTop \%attr, \%menu;
+openHeader "/develop/css", "top.css", "qmgr.css", "event.css" ;
+showTop $_attr, \%menu;
 
-exists %attr->{cmd} &&
-       %attr->{cmd} eq 'open' &&
-       showQmgr \%attr, $_qmgr ;
+exists $_attr->{cmd} &&
+       $_attr->{cmd} eq 'open' &&
+       showQmgr $_attr, $_qmgr ;
 
 
 closeHeader ;
+

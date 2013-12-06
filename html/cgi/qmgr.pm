@@ -29,13 +29,43 @@ sub readEventFiles
       foreach my $line ( split '\t', $dscr )
       {
         my ($key,$value) = split '=', $line ;
-        $qmgr{$qmgr}{$msgId}{decr}{$key} = $value ;
+        $qmgr{$qmgr}{$msgId}{detail}{$key} = $value ;
       }
     }
     close QMGR ;
   }
   return \%qmgr ;
 }
+
+################################################################################
+# print events
+################################################################################
+sub showEvents
+{
+  my $_qmgr = $_[0] ;
+
+  print "<div class=qmgr-active>\n";
+  foreach my $msgId  ( keys %$_qmgr )
+  {
+    my $time = $_qmgr->{$msgId}{time};
+    $time =~ s/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2}).+/$1-$2-$3 $4:$5:$6/;
+    print "<div class=event>\n" ;
+    print "$time ";
+    print "$_qmgr->{$msgId}{reason} \n" ;
+    print "<div class=event-detail>\n";
+    print "<table>\n";
+    foreach my $key ( keys %{$_qmgr->{$msgId}{detail}} )
+    {
+      print"<tr><td>$key</td><td>$_qmgr->{$msgId}{detail}{$key}</td> </tr>\n";
+    }
+    print "</table>\n";
+    print "</div>\n";
+    print "</div>\n" ;
+  }
+  print "</div>\n";
+}
+
+
 ################################################################################
 # show all qmgr
 ################################################################################
@@ -44,14 +74,18 @@ sub showQmgr
   my $_attr = $_[0] ;
   my $_qmgr = $_[1] ;
 
-  setHref $_attr ;
+  my $activeQmgr = $_attr->{qmgr} if exists $_attr->{qmgr} ;
 
   print "<div class=qmgr>\n";
   foreach my $qmgr ( sort keys %$_qmgr )
   {
-    print "<div class=qmgr-inactive><a >\n" ;
+    my $class = "qmgr-inactive" ;
+       $class = "qmgr-active" if $qmgr eq $activeQmgr ;
+    my $url = setHref $_attr , "qmgr", $qmgr ;
+    print "<div class=$class><a class=qmgr href=\"$url\">\n" ;
     print "<img class=qmgr src=\"/develop/icons/red-cross-16.png\">$qmgr\n" ;
     print "</a></div>\n";
+    showEvents $_qmgr->{$qmgr} if $qmgr eq $activeQmgr
   }
   print "</div>\n";
 

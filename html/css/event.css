@@ -1,0 +1,30 @@
+/* 
+    Document   : qmgr.css
+    Created on : Dec 03, 2013
+    Author     : mertale
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+* { margin : 0px; padding: 0px;}
+
+div.event
+{
+  float: left ;
+  display: inline-block;
+  position: relative; left : 0px; top : 0px; 
+  width: fit-content; height: fit-content ;
+  margin:   1px; 
+  margin-left:   10px; padding : 0px;
+  background-color:  #999 ;
+  border : 1px solid #bb0000; 
+  clear:both;
+}
+
+div.event-detail
+{
+  float: left ;
+  display: inline-block;
+  position: relative;
+}
+
