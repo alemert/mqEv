@@ -20,9 +20,15 @@ sub cmdLn
   my $urlAttr =  $ENV{'QUERY_STRING'};
 
   $ENV{'REQUEST_METHOD'} =~ tr/a-z/A-Z/;
+  my $buffer ;
+  if( $ENV{'REQUEST_METHOD'} eq 'POST' )
+  {
+    read( STDIN, $buffer, $ENV{CONTENT_LENGTH});
+  }
 
   my %attr;
   my @attrPairs = split /&/, $urlAttr ;
+  push @attrPairs, split /&/, $buffer ;
   foreach my $pair (@attrPairs)
   {
     chomp $pair ;
@@ -31,6 +37,8 @@ sub cmdLn
     my $val = $2 ;
     $attr{$key} = $val ;
   } 
+
+
   return \%attr ;
 }
 

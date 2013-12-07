@@ -67,8 +67,11 @@ sub showEvents
     print "<table class=event-reason><tr>\n";
     print "<td class=event-time>$time</td>\n";
     print "<td class=event-reason>\n";
-    print "<button> type=button ";
-    print "        value=$_qmgr->{$msgId}{reason}>\n";
+    print "<form action=\"\" method=POST>\n";
+    print "<button class=event-reason type=submit name=msgid value=$msgId> ";
+    print "ACKNOWLEDGE<br>$_qmgr->{$msgId}{reason}\n";
+    print "</button>\n";
+    print "</form>\n";
     print "</td>\n" ;
     print "</tr></table>\n";
     print "</div>\n";

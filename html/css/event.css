@@ -51,6 +51,12 @@ td.event-reason
   vertical-align: top ;
 }
 
+button.event-reason
+{
+  font-size: xx-small ;
+  background: #800;
+}
+
 div.event-detail
 {
   float : left;
