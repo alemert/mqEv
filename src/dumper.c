@@ -420,7 +420,7 @@ void printEventTableLine( FILE* fp, tEvent* eventList )
 	                            event->pmd->PutTime);
     strptime( timeStr, "%Y%m%d%H%M%S", &gmtTs);
     gmtTime = mktime( &gmtTs );
-    locTime = gmtTime - utcOffset;
+    locTime = gmtTime + utcOffset;
     locTs = *localtime( &locTime );
     strftime( locStr, 64, "%Y%m%d%H%M%S",&locTs);
 
@@ -441,11 +441,13 @@ void printEventTableLine( FILE* fp, tEvent* eventList )
     item = event->item ;
     while( item )
     {
+#if(0)
       if( item->selector == MQIASY_REASON )
       {
         item = item->next ;
-	continue ;
+        continue ;
       }
+#endif
       itemStr = (char*) getEventItem( item );
       if( *itemStr != '\0')
       {

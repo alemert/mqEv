@@ -10,25 +10,30 @@ sub readEventFiles
   {
     my $qmgr = $qmgrFile ;
     $qmgr =~ s/^.+\/(.+)\.(.+)$/$1/ ;
+    $qmgr{$qmgr}{foo} = '' ;
+    delete $qmgr{$qmgr}{foo} ;
     open QMGR, "$qmgrFile" ;
     <QMGR>;
     foreach my $line (<QMGR>)
     {
       next unless $line =~ /^(0x [0-9A-Fa-f ]+)\s+
                             (\d+)\s+
+                            (\d+)\s+
                             (\w+)\s+
                             (.+)\s*$/x;
       my $msgId  = $1 ;
-      my $evTime = $2 ;
-      my $reason = $3 ;
-      my $dscr   = $4 ;
+      my $gmtTime = $2 ;
+      my $locTime = $3 ;
+      my $reason = $4 ;
+      my $dscr   = $5 ;
       $msgId =~ s/\s//g ;
 
-      $qmgr{$qmgr}{$msgId}{time} = $evTime ;
+      $qmgr{$qmgr}{$msgId}{time} = $locTime ;
       $qmgr{$qmgr}{$msgId}{reason} = $reason ;
       foreach my $line ( split '\t', $dscr )
       {
         my ($key,$value) = split '=', $line ;
+        $value =~ s/\s*$//g;
         $qmgr{$qmgr}{$msgId}{detail}{$key} = $value ;
       }
     }
@@ -44,19 +49,43 @@ sub showEvents
 {
   my $_qmgr = $_[0] ;
 
-  print "<div class=qmgr-active>\n";
-  foreach my $msgId  ( keys %$_qmgr )
+  my @msgId = keys %$_qmgr ;
+
+  print "<div class=event-all>\n";
+  if( scalar @msgId == 0 )
+  {
+    print "<div class=event-empty><p>no open events found</p></div>\n";
+  }
+  foreach my $msgId  ( @msgId )
   {
     my $time = $_qmgr->{$msgId}{time};
-    $time =~ s/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2}).+/$1-$2-$3 $4:$5:$6/;
+    $time =~ s/^(\d{4})(\d{2})(\d{2})
+                (\d{2})(\d{2})(\d{2}).*$/$1-$2-$3 $4:$5:$6/x;
     print "<div class=event>\n" ;
-    print "$time ";
-    print "$_qmgr->{$msgId}{reason} \n" ;
+
+    print "<div class=event-reason>";
+    print "<table class=event-reason><tr>\n";
+    print "<td class=event-time>$time</td>\n";
+    print "<td class=event-reason>\n";
+    print "<button> type=button ";
+    print "        value=$_qmgr->{$msgId}{reason}>\n";
+    print "</td>\n" ;
+    print "</tr></table>\n";
+    print "</div>\n";
+
+    my $rKey = "MQIASY_REASON";
     print "<div class=event-detail>\n";
-    print "<table>\n";
+    print "<table rules=\"rows\" class=event-detail>\n";
+    print "<tr class=event-detail>\n";
+    print "<td class=event-reason>$rKey</td>";
+    print "<td class=event-detail>$_qmgr->{$msgId}{detail}{$rKey}</td> </tr>\n";
+    delete $_qmgr->{$msgId}{detail}{$rKey} ;
+
     foreach my $key ( keys %{$_qmgr->{$msgId}{detail}} )
     {
-      print"<tr><td>$key</td><td>$_qmgr->{$msgId}{detail}{$key}</td> </tr>\n";
+      print "<tr class=event-detail>\n";
+      print "<td class=event-reason>$key</td>";
+      print "<td class=event-detail>$_qmgr->{$msgId}{detail}{$key}</td> </tr>\n";
     }
     print "</table>\n";
     print "</div>\n";
@@ -79,13 +108,16 @@ sub showQmgr
   print "<div class=qmgr>\n";
   foreach my $qmgr ( sort keys %$_qmgr )
   {
+    my $img = "/develop/icons/red-cross-16.png" ;
+       $img = "/develop/icons/tick-icon-16.png" if scalar keys %{$_qmgr->{$qmgr}} == 0; 
+
     my $class = "qmgr-inactive" ;
        $class = "qmgr-active" if $qmgr eq $activeQmgr ;
     my $url = setHref $_attr , "qmgr", $qmgr ;
     print "<div class=$class><a class=qmgr href=\"$url\">\n" ;
-    print "<img class=qmgr src=\"/develop/icons/red-cross-16.png\">$qmgr\n" ;
+    print "<img class=qmgr src=\"$img\">$qmgr\n" ;
     print "</a></div>\n";
-    showEvents $_qmgr->{$qmgr} if $qmgr eq $activeQmgr
+    showEvents $_qmgr->{$qmgr} if $qmgr eq $activeQmgr;
   }
   print "</div>\n";
 
