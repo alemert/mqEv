@@ -8,10 +8,21 @@ sub readEventFiles
 
   foreach $qmgrFile ( <$dir/*.event> )
   {
-    my $qmgr = $qmgrFile ;
-    $qmgr =~ s/^.+\/(.+)\.(.+)$/$1/ ;
-    $qmgr{$qmgr}{foo} = '' ;
-    delete $qmgr{$qmgr}{foo} ;
+    my $qmgr = $qmgrFile ;              # get qmgr from file name
+    $qmgr =~ s/^.+\/(.+)\.(.+)$/$1/ ;   #
+    $qmgr{$qmgr}{foo} = '' ;            # create empty hash node
+    delete $qmgr{$qmgr}{foo} ;          #  create empty hash node
+                                        #
+    my @stat = stat $qmgrFile ;         # calculate the age of the file
+    my @fileAge = localtime $stat[9] ;  #
+    my $ss   = $fileAge[0] ;            #
+    my $mm   = $fileAge[1] ;            #
+    my $hh   = $fileAge[2] ;            #
+    my $dd   = $fileAge[3] ;            #
+    my $MM   = $fileAge[4] ;            #
+    my $YYYY = $fileAge[5] + 1900 ;     #
+    $qmgr{$qmgr}{TS} = "$YYYY-$MM-$dd $hh:$mm:$ss"; 
+                                        #
     open QMGR, "$qmgrFile" ;
     <QMGR>;
     foreach my $line (<QMGR>)
@@ -108,18 +119,22 @@ sub showQmgr
 
   my $activeQmgr = $_attr->{qmgr} if exists $_attr->{qmgr} ;
 
-  print "<div class=qmgr>\n";
+  print "<div class=qmgr-all>\n";
   foreach my $qmgr ( sort keys %$_qmgr )
   {
     my $img = "/develop/icons/red-cross-16.png" ;
        $img = "/develop/icons/tick-icon-16.png" if scalar keys %{$_qmgr->{$qmgr}} == 0; 
 
+    print "<div class=qmgr>\n";
     my $class = "qmgr-inactive" ;
        $class = "qmgr-active" if $qmgr eq $activeQmgr ;
     my $url = setHref $_attr , "qmgr", $qmgr ;
-    print "<div class=$class><a class=qmgr href=\"$url\">\n" ;
-    print "<img class=qmgr src=\"$img\">$qmgr\n" ;
+    print "<div class=$class><a class=qmgr href=\"$url\">" ;
+    print "<img class=qmgr src=\"$img\">$qmgr" ;
     print "</a></div>\n";
+    print "<div class=qmgr-age>$_qmgr->{$qmgr}{TS}</div>\n";
+    print "</div>\n";
+    delete $_qmgr->{$qmgr}{TS};
     showEvents $_qmgr->{$qmgr} if $qmgr eq $activeQmgr;
   }
   print "</div>\n";

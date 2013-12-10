@@ -31,6 +31,11 @@
   font-size: x-small ;
 }
 
+/******************************************************************************/
+/* event-reason                       */
+/*    show time and acknowledge button             */
+/*    <td> event time is a part of event-reason      */
+/******************************************************************************/
 div.event-reason
 {
   float : left;
@@ -57,6 +62,17 @@ button.event-reason
   background: #800;
 }
 
+td.event-time
+{
+  margin : 0px;
+  padding : 0px;
+  width: 60px;
+}
+
+/******************************************************************************/
+/* event-datail                         */
+/*    table describing event with selector - mqi-item pair            */
+/******************************************************************************/
 div.event-detail
 {
   float : left;
@@ -67,7 +83,7 @@ table.event-detail
 {
   padding : 0px;
   margin : 0px;
-  min-width: 100px;
+  min-width: 310px;
   border-spacing: 0.1em;
 }
 
@@ -83,13 +99,6 @@ td.event-detail
   margin : 0px;
   padding : 0px;
   vertical-align: top ;
-}
-
-td.event-time
-{
-  margin : 0px;
-  padding : 0px;
-  width: 60px;
 }
 
 div.event-empty

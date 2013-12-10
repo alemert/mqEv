@@ -191,6 +191,7 @@ int initMq( )
   sysRc = mqOpenObject(                    //
               _ghConn                ,     // qmgr connection handle 
               &_godStoreQueue        ,     // event q object descriptor 
+              MQOO_INPUT_AS_Q_DEF    |     //   open object for get
               MQOO_OUTPUT            |     //   open object for get
               MQOO_BROWSE            |     //   open for browse
               MQOO_SET_ALL_CONTEXT   |     //   keep original date/time im MQMD
@@ -326,7 +327,7 @@ int browseEvents( MQHOBJ _ohQ )
       }                                       //
       case MQRC_NO_MSG_AVAILABLE :            //
       {                                       //
-        continue;                             //
+        break;                                //
       }                                       //
       default :                               //
       {                                       //
@@ -334,7 +335,6 @@ int browseEvents( MQHOBJ _ohQ )
         goto _door;                           //
       }                                       //
     }                                         //
-                                              //
   }                                           //
                                               //
   // -------------------------------------------------------  
@@ -420,10 +420,13 @@ int moveMessages( PMQBYTE24 _msgIdArray, MQHOBJ _getoh, MQHOBJ _putoh )
                                           //
   gmo.MatchOptions = MQMO_MATCH_MSG_ID;   // 
   gmo.Options      = MQGMO_CONVERT  +     //
-                     MQGMO_SYNCPOINT;     //
+                     MQGMO_SYNCPOINT+     //
+                     MQGMO_NO_WAIT  ;     //
   gmo.Version      = MQGMO_VERSION_3;     //
                                           //
-  md.Version = MQMD_VERSION_2;            //
+  md.Version  = MQMD_VERSION_2;            //
+  md.Encoding = MQENC_NATIVE ;
+  md.CodedCharSetId = MQCCSI_Q_MGR;
                                           //
   sysRc = mqBegin( _ghConn );             // begin transaction
   switch( sysRc )                         //
@@ -437,18 +440,18 @@ int moveMessages( PMQBYTE24 _msgIdArray, MQHOBJ _getoh, MQHOBJ _putoh )
   }                                       //
                                           //
   msgId = _msgIdArray ;                   //
-  while( memcmp( msgId, MQMI_NONE, sizeof(MQBYTE24) ) != 0 ) 
+  while( memcmp( msgId, MQMI_NONE, MQ_MSG_ID_LENGTH ) != 0 ) 
   {                                       //
     // -----------------------------------------------------  
     // read particular message
     // -----------------------------------------------------  
                                           //
-    memcpy( &(md.MsgId), msgId, sizeof(md.MsgId) );
+    memcpy( &(md.MsgId), msgId, MQ_MSG_ID_LENGTH );
     int loop = 1;                         // resizing the message buffer loop
     while( loop == 1 )                    // resize message buffer if message
     {                                     //  truncated
       reason = mqGet( _ghConn   ,         // connection handle
-                     _gohEvQueue,         // pointer to queue handle
+                     _getoh     ,         // pointer to queue handle
                      buffer     ,         // message buffer
                      &msgLng    ,         // buffer length
                      &md        ,         // message Descriptor
@@ -494,7 +497,7 @@ int moveMessages( PMQBYTE24 _msgIdArray, MQHOBJ _getoh, MQHOBJ _putoh )
 	        MQPMO_NO_CONTEXT        + //
                 MQPMO_SYNCPOINT         ; //
     reason = mqPut( _ghConn     ,         // connection handle
-                    _gohAckQueue,         // pointer to queue handle
+                    _putoh      ,         // pointer to queue handle
                     &md         ,         // message descriptor
                     &pmo        ,         // Options controlling MQPUT
                     buffer      ,         // message buffer
@@ -545,6 +548,11 @@ void msgIdStr2MQbyte( char* _str, PMQBYTE24 _pmsgid )
 
   MQBYTE24 msgid ;
 
+  if( memcmp( _str, "0x", 2 ) == 0 )
+  {
+    _str += 2 ;
+  }
+  memset( msgid, 0, sizeof(MQBYTE24) );
   for( i=0, str=_str; i<24; i++)
   {
     memcpy( buff, str, 2 );
@@ -699,8 +707,8 @@ MQLONG acceptMessages( int *_movedMessages )
                     &msgLng    ,          // buffer length
                     &md        ,          // msg Desriptor
                     gmo        ,          // get message option
-                    500       );          //  wait interval
-                                          //
+                    60000     );          // wait interval in milliseconds
+                                          // (makes 1Minute)
     switch( reason )                      //
     {                                     //
       case MQRC_NONE :                    //

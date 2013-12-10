@@ -8,7 +8,7 @@
 
 * { margin : 0px; padding: 0px;}
 
-div.qmgr
+div.qmgr-all
 {
   position: relative; left : 0px; top : 0px; 
   width: fit-content; height: fit-content ;
@@ -16,6 +16,11 @@ div.qmgr
   background-color:  #dddddd;
   border : 1px solid #000000; 
   clear:both;
+}
+
+div.qmgr
+{
+  width: 100%;
 }
 
 a.qmgr
@@ -33,7 +38,7 @@ img.qmgr
 
 div.qmgr-inactive
 { 
-  width  : 100%;
+  display: inline-block;
   background-color:  #ddddcf;
 /*  border-bottom : 1px solid #000000;  */
   border : 1px solid #000000; 
@@ -42,10 +47,17 @@ div.qmgr-inactive
 
 div.qmgr-active
 { 
+  display: inline-block;
   float: left;
   width  : 100%;
   background-color:  #aaaaaa;
 /*  border-bottom : 1px solid #000000;  */
   border : 1px solid #000000; 
   clear:both;
+}
+
+div.qmgr-age
+{
+  display: inline-block;
+  float: right;
 }

@@ -139,6 +139,7 @@ int htmlWorker()
     goto _door;                                //
   }                                            //
                                                //
+#if(0)
   // -------------------------------------------------------
   // browse messages in the store queue
   // -------------------------------------------------------
@@ -157,30 +158,12 @@ int htmlWorker()
     goto _door;                                //
   }                                            //
                                                //
+#endif
   // -------------------------------------------------------
   // major loop
   // -------------------------------------------------------
   while( 1 )                                   //
   {                                            //
-    // -----------------------------------------------------
-    // accept messages
-    // -----------------------------------------------------
-    do
-    {                                          //
-      sysRc = acceptMessages( &movedMessages );// wait for messages on the 
-      switch( sysRc )                          //  collect queue and move them 
-      {                                        //  to the store queue
-        case MQRC_NONE :                       //
-        case MQRC_NO_MSG_AVAILABLE :           //
-	{                                      //
-          usleep(500);                         // sleep 500 micro seconds for 
-	  break;                               //  handling signals
-	}                                      //
-        default : goto _door;                  //
-      }                                        //
-    }                                          //
-    while( movedMessages == 0 );               //
-                                               //
     // -----------------------------------------------------
     // browse messages in the store queue
     // -----------------------------------------------------
@@ -215,6 +198,25 @@ int htmlWorker()
     {                                          //
       goto _door;                              //
     }                                          //
+                                               //
+    // -----------------------------------------------------
+    // accept messages
+    // -----------------------------------------------------
+    do
+    {                                          //
+      sysRc = acceptMessages( &movedMessages );// wait for messages on the 
+      switch( sysRc )                          //  collect queue and move them 
+      {                                        //  to the store queue
+        case MQRC_NONE :                       //
+        case MQRC_NO_MSG_AVAILABLE :           //
+	{                                      //
+          usleep(500);                         // sleep milli seconds for 
+	  break;                               //  handling signals
+	}                                      //
+        default : goto _door;                  //
+      }                                        //
+    }                                          //
+    while( movedMessages == 0 );               //
                                                //
     sleep(1);                                  //
   }                                            //
