@@ -1,5 +1,8 @@
 /******************************************************************************/
 /*   M Q   E V E N T   N O D E   U T I L I T I E S                         */
+/*              */
+/*   application: mqevent                     */
+/*   module     : node                     */
 /*                                                                            */
 /*   functions:                                                               */
 /*    - bag2mqiNode                                                           */
@@ -12,14 +15,14 @@
 /*    - freeMqiItemValue                                                      */
 /*    - addQmgrNode                                                           */
 /*    - findQmgrNode                                                          */
-/*    - lastQmgrNode                                        */
-/*    - newEventNode                                          */
-/*    - addEventNode                                        */
-/*    - item2event                                                      */
-/*    - moveMqiItem                                          */
-/*    - getMsgIdPair                              */
-/*    - matchEventReason                             */
-/*                                                                    */
+/*    - lastQmgrNode                                                */
+/*    - newEventNode                                                  */
+/*    - addEventNode                                                */
+/*    - item2event                                                            */
+/*    - moveMqiItem                                                  */
+/*    - getMsgIdPair                                      */
+/*    - matchEventReason                                       */
+/*                                                                            */
 /******************************************************************************/
 
 /******************************************************************************/

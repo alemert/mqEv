@@ -21,6 +21,7 @@
 /******************************************************************************/
 /*   D E F I N E S                                                            */
 /******************************************************************************/
+#define TRANSACTION_SIZE            100
 
 /******************************************************************************/
 /*   G L O B A L E S                                                          */
@@ -52,6 +53,6 @@ void printEventList();
 int handleDoneEvents();
 void msgIdStr2MQbyte( char* str, PMQBYTE24 msgid );
 MQLONG acknowledgeMessages();
-MQLONG acceptMessages( int *_movedMessages );
-
+MQLONG acceptMessages( int *_movedMsgQmgr );
+hier acceptMessages anpassen
 

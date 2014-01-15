@@ -2,19 +2,27 @@
 /*                             M Q   E V E N T S                              */
 /*                                                                            */
 /*  description:                                                              */
-/*    start program :                                                  */
-/*      from cmd line                                            */
-/*      triggered from qmgr                                */
-/*    read (browse) mq events from some event queue            */
-/*    analyse the event                                                  */
-/*    show event on the console or send it to the xymon            */
-/*    rotate monitoring                                              */
-/*                                                                */
-/*    functions:                              */
-/*      - main                                        */
-/*      - initPrg                              */
-/*      - background                                  */
-/*                                    */
+/*                                                        */
+/*    start program :                                                         */
+/*      from cmd line                                                         */
+/*      triggered from qmgr (not applied yet)                                 */
+/*                                                  */
+/*    work flow:                                        */
+/*     - read events from ADMIN.COLLECT.QUEUE and                 */
+/*     - put them on the  ADMIN.STORE.QUEUE                        */
+/*     - double (i.g. stop/start) events are automatically forwarded from     */
+/*       ADMIN.STORE.QUEUE to ADMIN.CONFIRM.QUEUE                      */
+/*     - single events (f.e. dlq ) have to be acknowledged by web interface.  */
+/*       web interface will move them from ADMIN.STORE.QUEUE             */
+/*       to ADMIN.COLLECT.QUEUE                                  */ 
+/*     - each event on the ADMIN.STORE.QUEUE and ADMIN.COLLECT.QUEUE will be  */
+/*       analysed and written to web interface file (or shown on console      */
+/*                                                                            */
+/*    functions:                                                    */
+/*      - main                                                              */
+/*      - initPrg                                                  */
+/*      - background                                                          */
+/*                                                                            */
 /******************************************************************************/
 
 /******************************************************************************/

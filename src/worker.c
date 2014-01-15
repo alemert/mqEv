@@ -121,6 +121,7 @@ int htmlWorker()
   int sysRc = 0 ;
 
   int movedMessages = 0;
+  char movedMsgQmgr[TRANSACTION_SIZE][MQ_Q_MGR_NAME_LENGTH+1] ;
 
   tIniNode *searchIni ;    // data structure for getting searching in ini files
   char     *wwwDir    ;    // directory for raw html data
@@ -204,7 +205,7 @@ int htmlWorker()
     // -----------------------------------------------------
     do
     {                                          //
-      sysRc = acceptMessages( &movedMessages );// wait for messages on the 
+      sysRc = acceptMessages( movedMsgQmgr );  // wait for messages on the 
       switch( sysRc )                          //  collect queue and move them 
       {                                        //  to the store queue
         case MQRC_NONE :                       //

@@ -14,14 +14,17 @@ sub readEventFiles
     delete $qmgr{$qmgr}{foo} ;          #  create empty hash node
                                         #
     my @stat = stat $qmgrFile ;         # calculate the age of the file
-    my @fileAge = localtime $stat[9] ;  #
+    my @fileAge = localtime( $stat[9] );  #
     my $ss   = $fileAge[0] ;            #
     my $mm   = $fileAge[1] ;            #
     my $hh   = $fileAge[2] ;            #
     my $dd   = $fileAge[3] ;            #
     my $MM   = $fileAge[4] ;            #
     my $YYYY = $fileAge[5] + 1900 ;     #
-    $qmgr{$qmgr}{TS} = "$YYYY-$MM-$dd $hh:$mm:$ss"; 
+    $qmgr{$qmgr}{TS} = sprintf( "%4d-%2d-%2d!%2d:%2d:%2s" , 
+                                 $YYYY,$MM,$dd,$hh,$mm,$ss); 
+    $qmgr{$qmgr}{TS} =~ s/ /0/g; 
+    $qmgr{$qmgr}{TS} =~ s/!/ /g; 
                                         #
     open QMGR, "$qmgrFile" ;
     <QMGR>;
@@ -50,6 +53,7 @@ sub readEventFiles
     }
     close QMGR ;
   }
+
   return \%qmgr ;
 }
 
@@ -123,16 +127,23 @@ sub showQmgr
   foreach my $qmgr ( sort keys %$_qmgr )
   {
     my $img = "/develop/icons/red-cross-16.png" ;
-       $img = "/develop/icons/tick-icon-16.png" if scalar keys %{$_qmgr->{$qmgr}} == 0; 
+       $img = "/develop/icons/tick-icon-16.png" if scalar keys %{$_qmgr->{$qmgr}} < 2 ;
 
-    print "<div class=qmgr>\n";
     my $class = "qmgr-inactive" ;
        $class = "qmgr-active" if $qmgr eq $activeQmgr ;
+
     my $url = setHref $_attr , "qmgr", $qmgr ;
-    print "<div class=$class><a class=qmgr href=\"$url\">" ;
-    print "<img class=qmgr src=\"$img\">$qmgr" ;
-    print "</a></div>\n";
-    print "<div class=qmgr-age>$_qmgr->{$qmgr}{TS}</div>\n";
+    my $evntCnt = ( scalar keys %{$_qmgr->{$qmgr}} ) -1 ;
+    if( $evntCnt == 0 )    { $evntCnt = "no event" ; }
+    elsif( $evntCnt == 1 ) { $evntCnt = "1 event"  ; }
+    else { $evntCnt .= " events" ; }
+    $evntCnt = $evntCnt." since" ;
+
+    print "<div class=$class>";
+    print "<div class=qmgr>";
+    print "<a class=qmgr href=\"$url\"><img class=qmgr src=\"$img\">$qmgr </a>";
+    print "</div>";
+    print "<div class=qmgr-age>$evntCnt<br>$_qmgr->{$qmgr}{TS}</div>\n";
     print "</div>\n";
     delete $_qmgr->{$qmgr}{TS};
     showEvents $_qmgr->{$qmgr} if $qmgr eq $activeQmgr;

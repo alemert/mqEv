@@ -44,6 +44,7 @@ if( exists $_attr->{msgid} )
 {
    $ENV{LD_LIBRARY_PATH}=$ENV{LD_LIBRARY_PATH}.':'."/home/mertale/NetBeansProjects/mqEv/lib/gcc/64/Linux.x86_64/" ;
   system( "/home/mertale/NetBeansProjects/mqEv/bin/gcc/64/Linux.x86_64/mqev --ack $_attr->{msgid} --ini  /home/mertale/NetBeansProjects/mqEv/etc/ini/mqev.apache.ini") ;
+  delete $_attr->{msgid} ;
 }
 
 my $_qmgr = readEventFiles $wwwDir ;

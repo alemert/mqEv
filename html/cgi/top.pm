@@ -12,6 +12,7 @@ sub openHeader
   print "<html lang=\"en\">\n";
   print "<head>\n";
   print "<title>mq event</title>\n";
+  print "<meta http-equiv=\"refresh\" content=\"30 URL=\">\n" ;
   print "<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n";
 # print "<style type=\"text/css\">\n";
   foreach my $css (@css)

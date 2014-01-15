@@ -82,7 +82,6 @@
 /******************************************************************************/
 /*   D E F I N E S                                                            */
 /******************************************************************************/
-#define TRANSACTION_SIZE            100
 #define INITIAL_MESSAGE_LENGTH      512
 
 /******************************************************************************/
@@ -584,6 +583,7 @@ MQLONG acknowledgeMessages()
   // get message id's from command line as a string, 
   //   allocate memory for message id's in hex format
   //   convert string into hex
+  //   move messages from store queue to confirm queue
   // -------------------------------------------------------
   msgIdArr = getStrArrayAttr( "ack" );    // get all message id's from 
   if( !msgIdArr )                         //   the command line
@@ -600,17 +600,17 @@ MQLONG acknowledgeMessages()
     goto _door;                           //
   }                                       //
                                           //
-  for( i=0; i< msgIdArrSize; i++ )        //
-  {                                       //
+  for( i=0; i< msgIdArrSize; i++ )        // convert numerical message id 
+  {                                       //   to string
     msgIdStr2MQbyte( msgIdArr[i], (msgId24+i) );  
   }                                       //
   memcpy( (msgId24+1), MQMI_NONE, sizeof(MQBYTE24) );
                                           //
-  sysRc = moveMessages( msgId24       ,   // move messages from collect queue
-		        _gohStoreQueue,   // including mqBegin and mqCommit
-		        _gohAckQueue );   //
-  if( sysRc != 0 )                        //
-  {                                       //
+  sysRc = moveMessages( msgId24       ,   // move messages from store to queue
+		                _gohStoreQueue,   // confirm queue 
+		                _gohAckQueue );   // move messages handles whole 
+  if( sysRc != 0 )                        // transaction including commit
+  {                                       // 
     goto _door;                           //
   }                                       //
                                           //
@@ -692,8 +692,8 @@ MQLONG acceptMessages( int *_movedMessages )
                                           //
   while( msgCnt > 0 )                     //  using signals
   {                                       //
-    if( checkSignal() ) break;            // break out of the loop for any reason
-                                          //
+    if( checkSignal() ) break;            // break out of the loop for 
+                                          //  any signal
     // -----------------------------------------------------
     // read the message
     // -----------------------------------------------------

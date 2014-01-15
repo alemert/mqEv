@@ -336,9 +336,9 @@ int printQmgrEventTable( const char *dir, tQmgrNode* qmgrNode )
 
   char fileName[NAME_MAX];      // ignore the length of the path 
   char *p;
-
+                                                   //  
   snprintf( fileName, NAME_MAX-strlen(".event"),   // build a name of the file
-	    "%s/%s", dir, qmgrNode->qmgr      );   // {htmldir}/{qmgr}.event
+	        "%s/%s", dir, qmgrNode->qmgr  );   // {htmldir}/{qmgr}.event
   p = strchr( fileName, ' ' );                     // find 1st blank
   if( p ) sprintf( p, ".event") ;                  // add suffix
                                                    //
@@ -356,6 +356,8 @@ int printQmgrEventTable( const char *dir, tQmgrNode* qmgrNode )
                          "Description" );          //
                                                    //
   printEventTableLine( fp, qmgrNode->singleEvent );//
+  printEventTableLine( fp, qmgrNode->qmgrEvent );  //
+  printEventTableLine( fp, qmgrNode->doubleEvent );//
                                                    //
   fprintf( fp, "\n" );                             //
   fclose( fp );                                    //

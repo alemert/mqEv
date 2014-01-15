@@ -51,22 +51,23 @@ sub setHref
   my $key = $_[1] ;
   my $value = $_[2] ;
 
+  my %url = %$_attr ;
+
   my $href = "?" ;
 
-
-  if( exists $_attr->{$key} &&
-             $_attr->{$key} eq $value )
+  if( exists $url{$key} &&
+             $url{$key} eq $value )
   {
-    delete $_attr->{$key};
+    delete $url{$key};
   }
   else
   {
-    $_attr->{$key} = $value ;
+    $url{$key} = $value ;
   }
 
-  foreach my $attr ( keys %$_attr )
+  foreach my $attr ( keys %url )
   {
-    $href .= $attr.'='.$_attr->{$attr}.'&amp;' ;
+    $href .= $attr.'='.$url{$attr}.'&amp;' ;
   }
 
   $href =~ s/\&amp;$// ;

@@ -343,7 +343,7 @@
         <gdb_options>
           <DebugOptions>
             <option name="debug_command"
-                    value="bin/gcc/64/Linux.x86_64/mqev --html --ini  etc/ini/mqev.apache.ini"/>
+                    value="bin/gcc/64/Linux.x86_64/mqev --html --ini  etc/ini/mqev.ini"/>
           </DebugOptions>
         </gdb_options>
         <gdb_buildfirst gdb_buildfirst_overriden="false" gdb_buildfirst_old="false"/>
