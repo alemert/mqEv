@@ -625,7 +625,7 @@ MQLONG acknowledgeMessages()
 /******************************************************************************/
 /*  accept messages                                                           */
 /******************************************************************************/
-MQLONG acceptMessages( int *_movedMessages )
+MQLONG acceptMessages( char *_movedMsgQmgr[MQ_Q_MGR_NAME_LENGTH] )
 {
   logFuncCall( ) ;
   MQLONG sysRc ;
@@ -646,183 +646,211 @@ MQLONG acceptMessages( int *_movedMessages )
                                    //
   tIniNode *searchIni ;            // data structure for searching in ini files
                                    //
+  int movedMessages=0;             //
+  int i;                           //
+                                   //
+  // -------------------------------------------------------  
+  // init vara
+  // -------------------------------------------------------  
+  memset( _movedMsgQmgr, 0, MQ_Q_MGR_NAME_LENGTH * 
+                            TRANSACTION_SIZE     * 
+                            sizeof(char)        );
+
   // -------------------------------------------------------  
   // initialize mq calls and open transaction
   // -------------------------------------------------------  
   searchIni = getIniNode("mq", "transaction");// find mq.transaction ini-node 
-  pIni = getIniIntValue(searchIni,"size");// get transaction size
-  if( !pIni )                             //
-  {                                       //
-    transSize = TRANSACTION_SIZE;         //
-  }                                       //
-  else                                    //
-  {                                       //
-    transSize = *pIni;                    //
-  }                                       //
-  msgCnt = transSize;                     //
-  *_movedMessages=0;                      //
-                                          //
-  if( !buffer )                           // message buffer has to be allocated 
-  {                                       // on first call of this function
-    buffer = (PMQVOID) malloc( msgLng );  //
-  }                                       //
-                                          //
-  gmo.MatchOptions = MQMO_MATCH_MSG_ID;   // 
-  gmo.Options      = MQGMO_CONVERT   +    //
-                     MQGMO_SYNCPOINT ,    //
-                     MQGMO_WAIT     ;     //
-  gmo.Version      = MQGMO_VERSION_3;     //
-                                          //
-  md.Version = MQMD_VERSION_2;            //
-                                          //
+  pIni = getIniIntValue(searchIni,"size");    // get transaction size
+  if( !pIni )                                 //
+  {                                           //
+    transSize = TRANSACTION_SIZE;             //
+  }                                           //
+  else                                        //
+  {                                           //
+    transSize = *pIni;                        //
+  }                                           //
+  msgCnt = transSize;                         //
+                                              //
+  if( !buffer )                               // message buffer has to be 
+  {                                           // allocated at first call of 
+    buffer = (PMQVOID) malloc( msgLng );      // this function
+  }                                           //
+                                              //
+  gmo.MatchOptions = MQMO_MATCH_MSG_ID;       // 
+  gmo.Options      = MQGMO_CONVERT    +       //
+                     MQGMO_SYNCPOINT  ,       //
+                     MQGMO_WAIT       ;       //
+  gmo.Version      = MQGMO_VERSION_3  ;       //
+                                              //
+  md.Version = MQMD_VERSION_2;                //
+                                              //
   // -------------------------------------------------------
   // open transaction
   // -------------------------------------------------------
-  reason = mqBegin( _ghConn );            // begin transaction
-  switch( reason )                        //
-  {                                       //
-    case MQRC_NONE :                      //
-    case MQRC_NO_EXTERNAL_PARTICIPANTS :  // transactions without external 
-    {                                     //  resource manager
-      sysRc = MQRC_NONE;                  //
-      break;                              //
-    }                                     //
-    default : goto _door;                 //
-  }                                       //
-                                          //
-  while( msgCnt > 0 )                     //  using signals
-  {                                       //
-    if( checkSignal() ) break;            // break out of the loop for 
-                                          //  any signal
+  reason = mqBegin( _ghConn );                // begin transaction
+  switch( reason )                            //
+  {                                           //
+    case MQRC_NONE :                          //
+    case MQRC_NO_EXTERNAL_PARTICIPANTS :      // transactions without external 
+    {                                         //  resource manager
+      sysRc = MQRC_NONE;                      //
+      break;                                  //
+    }                                         //
+    default : goto _door;                     //
+  }                                           //
+                                              //
+  while( msgCnt > 0 )                         //  using signals
+  {                                           //
+    if( checkSignal() ) break;                // break out of the loop for 
+                                              //  any signal
     // -----------------------------------------------------
     // read the message
     // -----------------------------------------------------
-    memcpy( &md.MsgId         ,           // flash message id, else only one message in UOW
-            MQMI_NONE         ,           // 
-            sizeof(md.MsgId) );           // 
-                                          //
-    reason = mqGet( _ghConn    ,          // connection handle
-                    _gohEvQueue,          // pointer to queue handle
-                    buffer     ,          // message buffer
-                    &msgLng    ,          // buffer length
-                    &md        ,          // msg Desriptor
-                    gmo        ,          // get message option
-                    60000     );          // wait interval in milliseconds
-                                          // (makes 1Minute)
-    switch( reason )                      //
-    {                                     //
-      case MQRC_NONE :                    //
-      {                                   //
-        msgCnt--;                         //
-        *_movedMessages=transSize-msgCnt; //
-        break;                            // ok
-      }                                   //
-      case MQRC_NO_MSG_AVAILABLE :        // no message available, necessary 
-      {                                   //  for catching signals
-	sysRc = reason;                   //
-        goto _door;                       //
-      }                                   //
-      case MQRC_BACKED_OUT:               //
-      {                                   //
-	sysRc = reason;                   //
-	goto _door;                       //
-      }                                   //
-      case MQRC_TRUNCATED_MSG_FAILED :    // message buffer to small for 
-      {                                   //  the physical message, 
-        logMQCall(WAR,"MQGET",reason);    //  resize (realloc) the buffer
-	bufferSize = msgLng;              //
+    memcpy( &md.MsgId         ,               // flash message id, else only one message in UOW
+            MQMI_NONE         ,               // 
+            sizeof(md.MsgId) );               // 
+                                              //
+    reason = mqGet( _ghConn    ,              // connection handle
+                    _gohEvQueue,              // pointer to queue handle
+                    buffer     ,              // message buffer
+                    &msgLng    ,              // buffer length
+                    &md        ,              // msg Desriptor
+                    gmo        ,              // get message option
+                    60000     );              // wait interval in milliseconds
+                                              // (makes 1Minute)
+    switch( reason )                          //
+    {                                         //
+      case MQRC_NONE :                        //
+      {                                       //
+        msgCnt--;                             //
+        movedMessages=transSize-msgCnt;       //
+        break;                                // ok
+      }                                       //
+      case MQRC_NO_MSG_AVAILABLE :            // no message available, necessary 
+      {                                       //  for catching signals
+	sysRc = reason;                       //
+        goto _door;                           //
+      }                                       //
+      case MQRC_BACKED_OUT:                   //
+      {                                       //
+	sysRc = reason;                       //
+	goto _door;                           //
+      }                                       //
+      case MQRC_TRUNCATED_MSG_FAILED :        // message buffer to small for 
+      {                                       //  the physical message, 
+        logMQCall( WAR, "MQGET", reason );    //  resize (realloc) the buffer
+	bufferSize = msgLng;                  //
         buffer = resizeMqMessageBuffer( buffer, &bufferSize );
-                                          //
+                                              //
         // -------------------------------------------------
         // read the message with new buffer size
         // -------------------------------------------------
-        sysRc = mqGet( _ghConn     ,      // connection handle
-                        _gohEvQueue,      // pointer to queue handle
-                        buffer     ,      // message buffer
-                        &msgLng    ,      // buffer length
-                        &md        ,      // msg Desriptor
-                        gmo        ,      // get message option
-                        500       );      //  wait interval
-                                          //
-	if( sysRc != MQRC_NONE )          //
-        {                                 //
-          goto _door;                     //
-        }                                 //
-        continue;                         //
-      }                                   //
-      default :                           // real error (stopping qmgr)
-      {                                   //
-        sysRc = reason;                   //
-        goto _door;                       //
-      }                                   //
-    }                                     //
-                                          //
+        sysRc = mqGet( _ghConn     ,          // connection handle
+                        _gohEvQueue,          // pointer to queue handle
+                        buffer     ,          // message buffer
+                        &msgLng    ,          // buffer length
+                        &md        ,          // msg Desriptor
+                        gmo        ,          // get message option
+                        500       );          //  wait interval
+                                              //
+	if( sysRc != MQRC_NONE )              //
+        {                                     //
+          goto _door;                         //
+        }                                     //
+        continue;                             //
+      }                                       //
+      default :                               // real error (stopping qmgr)
+      {                                       //
+        sysRc = reason;                       //
+        goto _door;                           //
+      }                                       //
+    }                                         //
+                                              //
     // ---------------------------------------------------  
     // write the same message to done queue
     // ---------------------------------------------------  
-    pmo.Options=MQPMO_FAIL_IF_QUIESCING + //
-  //            MQPMO_NO_CONTEXT        + //
-                MQPMO_SET_ALL_CONTEXT   + // for keeping old time / date
-                MQPMO_SYNCPOINT         ; //
-                                          //
-    reason = mqPut( _ghConn       ,       // connection handle
-                    _gohStoreQueue,       // pointer to queue handle
-                    &md           ,       // message descriptor
-                    &pmo          ,       // Options controlling MQPUT
-                    buffer        ,       // message buffer
-                    msgLng       );       // message length (buffer length)
-                                          //
-    switch( reason )                      //
-    {                                     //
-      case MQRC_NONE : break;             //
-      case MQRC_BACKED_OUT:               //
-      {                                   //
-	sysRc = reason;                   //
-	goto _door;                       //
-      }                                   //
-      default :                           //
-      {                                   //
-        sysRc = reason;                   //
-        goto _door;                       //
-      }                                   //
-    }                                     //
-  }                                       //
-                                          //
+    pmo.Options=MQPMO_FAIL_IF_QUIESCING +     //
+  //            MQPMO_NO_CONTEXT        +     //
+                MQPMO_SET_ALL_CONTEXT   +     // for keeping old time / date
+                MQPMO_SYNCPOINT         ;     //
+                                              //
+    reason = mqPut( _ghConn       ,           // connection handle
+                    _gohStoreQueue,           // pointer to queue handle
+                    &md           ,           // message descriptor
+                    &pmo          ,           // Options controlling MQPUT
+                    buffer        ,           // message buffer
+                    msgLng       );           // message length (buffer length)
+                                              //
+    switch( reason )                          //
+    {                                         //
+      case MQRC_NONE :                        // message put to store queue
+      {                                       //
+        for( i=0; i<TRANSACTION_SIZE; i++ )   // find out the queue manager 
+        {                                     //  where event was produced and 
+	  if( memcmp( _movedMsgQmgr[i]     ,  //  put it's name to the 
+                      md.ReplyToQMgr       ,  //  _moveMsgQmgr array,
+                      MQ_Q_MGR_NAME_LENGTH ) != 0)      
+          {                                   // ignore queue manager already 
+            break ;                           //  in the array (found in the 
+          }                                   //  same transaction)
+          if( _movedMsgQmgr[i][0]=='\0' )     //
+          {                                   //
+	    memcpy( _movedMsgQmgr[i]     ,    //
+                    md.ReplyToQMgr       ,    //
+                    MQ_Q_MGR_NAME_LENGTH);    //
+	    break ;                           //
+          }                                   //
+        }                                     //
+        break;                                //
+      }                                       //
+      case MQRC_BACKED_OUT:                   //
+      {                                       //
+	sysRc = reason;                       //
+	goto _door;                           //
+      }                                       //
+      default :                               //
+      {                                       //
+        sysRc = reason;                       //
+        goto _door;                           //
+      }                                       //
+    }                                         //
+  }                                           //
+                                              //
   // -------------------------------------------------------  
   // commit or rollback transaction
   // -------------------------------------------------------  
-  _door :                                 //
-                                          //
-  if( *_movedMessages > 0        &&       // messages found and moved
-      ( sysRc==MQRC_NONE         ||       // full transaction, 
-        sysRc== MQRC_NO_MSG_AVAILABLE ) ) // got all messages, queue empty  
-  {                                       //
-    reason = mqCommit( _ghConn );         //  commit transaction
-    switch( reason )                      //
-    {                                     //
-      case MQRC_NONE : break;             //
-      case MQRC_NO_EXTERNAL_PARTICIPANTS: // MQ only, no external participants 
-      {                                   //  to avoid evaluating RC in calling
-        sysRc = MQRC_NONE;                // functions set sysRc to 0
-        break;                            //
-      }                                   //
-      default :                           //
-      {                                   //
-        sysRc = reason;                   //
-	break;                            //
-      }                                   //
-    }                                     //
-  }                                       //
-  else                                    // some error occurred
-  {                                       //
-    reason = mqRollback( _ghConn );       // rollback 
-    switch( reason )                      //
-    {                                     //
-      case MQRC_NONE : break ;            //
-      default : break;                    //
-    }                                     //
-  }                                       //
-                                          //
+  _door :                                     //
+                                              //
+  if( movedMessages > 0          &&           // messages found and moved
+      ( sysRc==MQRC_NONE         ||           // full transaction, 
+        sysRc== MQRC_NO_MSG_AVAILABLE ) )     // got all messages, queue empty  
+  {                                           //
+    reason = mqCommit( _ghConn );             //  commit transaction
+    switch( reason )                          //
+    {                                         //
+      case MQRC_NONE : break;                 //
+      case MQRC_NO_EXTERNAL_PARTICIPANTS:     // MQ only, no external 
+      {                                       //  participants 
+        sysRc = MQRC_NONE;                    // set sysRc to 0,  to avoid 
+        break;                                //  evaluating RC in calling
+      }                                       //  functions 
+      default :                               //
+      {                                       //
+        sysRc = reason;                       //
+	break;                                //
+      }                                       //
+    }                                         //
+  }                                           //
+  else                                        // some error occurred
+  {                                           //
+    reason = mqRollback( _ghConn );           // rollback 
+    switch( reason )                          //
+    {                                         //
+      case MQRC_NONE : break ;                //
+      default : break;                        //
+    }                                         //
+  }                                           //
+                                              //
   logFuncExit( );
   return sysRc  ;
 }
