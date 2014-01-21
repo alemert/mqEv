@@ -51,6 +51,7 @@
 // ---------------------------------------------------------
 #include <dumper.h>
 #include <node.h>
+#include <mqev.h>
 
 /******************************************************************************/
 /*   G L O B A L S                                                            */
@@ -370,7 +371,7 @@ int printQmgrEventTable( const char *dir, tQmgrNode* qmgrNode )
 }
 
 /******************************************************************************/
-/*  print evnt table top line                                      */
+/*  print evnt table top line                                            */
 /******************************************************************************/
 void fPrintEventTopLine( FILE *fp, int nr, ... )
 {
@@ -463,4 +464,39 @@ void printEventTableLine( FILE* fp, tEvent* eventList )
   }
 
   logFuncExit( ) ;
+}
+
+
+/******************************************************************************/
+/*  touch event flag file       */
+/******************************************************************************/
+void touchEventFlag(char* dir, char movedMsgQmgr[][MQ_Q_MGR_NAME_LENGTH+1])
+{
+  FILE *fp;
+
+  char fileName[NAME_MAX] ;
+  int i;
+
+  if( dir == NULL )
+  {
+    goto _door ;
+  }
+
+  for( i=0; i<TRANSACTION_SIZE; i++ )
+  {
+    if( movedMsgQmgr[i][0] == '\0' ) break ;
+    sprintf( fileName, "%s/%s.ts", dir, movedMsgQmgr[i] );
+
+    fp = fopen( fileName, "w" );                     //open the file 
+    if( !fp )                                        // handle error
+    {                                                //
+      logger( LSTD_OPEN_FILE_FAILED, fileName );     //
+      goto _door;                                    //
+    }                                                //
+    fclose( fp );
+  }
+
+  _door :
+  
+  return ;
 }

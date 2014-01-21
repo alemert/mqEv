@@ -1,8 +1,8 @@
 /******************************************************************************/
 /*   M Q   E V E N T   N O D E   U T I L I T I E S                         */
 /*              */
-/*   application: mqevent                     */
-/*   module     : node                     */
+/*   application: mqevent                                       */
+/*   module     : node                                 */
 /*                                                                            */
 /*   functions:                                                               */
 /*    - bag2mqiNode                                                           */
@@ -15,13 +15,16 @@
 /*    - freeMqiItemValue                                                      */
 /*    - addQmgrNode                                                           */
 /*    - findQmgrNode                                                          */
-/*    - lastQmgrNode                                                */
-/*    - newEventNode                                                  */
-/*    - addEventNode                                                */
+/*    - lastQmgrNode                                                          */
+/*    - newEventNode                                                          */
+/*    - addEventNode                                                          */
 /*    - item2event                                                            */
-/*    - moveMqiItem                                                  */
-/*    - getMsgIdPair                                      */
-/*    - matchEventReason                                       */
+/*    - moveMqiItem                                                           */
+/*    - getMsgIdPair                                                  */
+/*    - matchEventReason                                                   */
+/*    - freeEventTree                            */
+/*    - freeItemTree                        */
+/*    - freeItemList                    */
 /*                                                                            */
 /******************************************************************************/
 
@@ -100,6 +103,9 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd );
 void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event );
 
 MQLONG matchEventReason( MQLONG reason );
+
+void freeItemTree( tEvent *_eventNode );
+void freeItemList( tMqiItem *_itemNode );
 
 /******************************************************************************/
 /*                                                                            */
@@ -943,4 +949,67 @@ MQLONG matchEventReason( MQLONG reason )
 
   logFuncExit( ) ;
   return match;
+}
+
+/******************************************************************************/
+/*  free event tree                                                           */
+/*                                                                            */
+/*    description:                                                            */
+/*                                                                            */
+/*      free complete even tree, do not free the list of the queue manager    */
+/******************************************************************************/
+void freeEventTree()
+{
+  tQmgrNode *qmgrNode = _gEventList ;
+
+  if( qmgrNode == NULL ) goto _door ;
+
+  while( qmgrNode )
+  {
+    freeItemTree( qmgrNode->qmgrEvent   );
+    freeItemTree( qmgrNode->singleEvent );
+    freeItemTree( qmgrNode->doubleEvent );
+    qmgrNode->qmgrEvent   = NULL;
+    qmgrNode->singleEvent = NULL;
+    qmgrNode->doubleEvent = NULL;
+    qmgrNode = qmgrNode->next ;
+  }
+
+  _door:
+      return ;
+}
+
+/******************************************************************************/
+/*  free item tree                                                            */
+/******************************************************************************/
+void freeItemTree( tEvent *_eventNode )
+{
+  tEvent *eventNode = _eventNode ;
+  tEvent *nextNode  ;
+
+  while( eventNode )
+  {
+    free( eventNode->pmd );
+    freeItemList( eventNode->item );
+    nextNode = eventNode->next;
+    free( eventNode );
+    eventNode = nextNode ; 
+  }
+}
+
+/******************************************************************************/
+/*  free item list                                                            */
+/******************************************************************************/
+void freeItemList( tMqiItem *_itemNode )
+{
+  tMqiItem *itemNode = _itemNode ;
+  tMqiItem *nextNode ;
+
+  while( itemNode )
+  {
+    freeMqiItemValue( itemNode );
+    nextNode = itemNode->next ;
+    free( itemNode );
+    itemNode = nextNode ;
+  }
 }

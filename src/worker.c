@@ -38,6 +38,7 @@
 // ---------------------------------------------------------
 #include <mqev.h>
 #include <dumper.h>
+#include <node.h>
 
 /******************************************************************************/
 /*   G L O B A L S                                                            */
@@ -120,7 +121,6 @@ int htmlWorker()
   logFuncCall( ) ;
   int sysRc = 0 ;
 
-  int movedMessages = 0;
   char movedMsgQmgr[TRANSACTION_SIZE][MQ_Q_MGR_NAME_LENGTH+1] ;
 
   tIniNode *searchIni ;    // data structure for getting searching in ini files
@@ -209,15 +209,21 @@ int htmlWorker()
       switch( sysRc )                          //  collect queue and move them 
       {                                        //  to the store queue
         case MQRC_NONE :                       //
+        {                                      // if messages found, write flag
+	  break;                               //  directory
+	}                                      //
         case MQRC_NO_MSG_AVAILABLE :           //
 	{                                      //
           usleep(500);                         // sleep milli seconds for 
 	  break;                               //  handling signals
 	}                                      //
         default : goto _door;                  //
-      }                                        //
+      }                                        // write time stamp flag file for 
+                                               //  each queue manager that 
+      touchEventFlag(wwwDir,movedMsgQmgr);     //  produced an event message
     }                                          //
-    while( movedMessages == 0 );               //
+    while( movedMsgQmgr[0][0] == '\0' );       // stay in loop if no 
+                                               //  message found
                                                //
     sleep(1);                                  //
   }                                            //
@@ -229,7 +235,7 @@ int htmlWorker()
 }
 
 /******************************************************************************/
-/*  acknowledge worker      */
+/*  acknowledge worker                  */
 /******************************************************************************/
 int ackWorker( )
 {
@@ -250,34 +256,45 @@ int ackWorker( )
   // -------------------------------------------------------  
   // initialize MQ
   // -------------------------------------------------------  
-  sysRc = initMq();                       // connect to queue manager 
-  if( sysRc != 0 )                        // and open the queues
-  {                                       // handle mq errors
-    goto _door;                           //
-  }                                       //
-                                          //
+  sysRc = initMq();                         // connect to queue manager 
+  if( sysRc != 0 )                          // and open the queues
+  {                                         // handle mq errors
+    goto _door;                             //
+  }                                         //
+                                            //
+  // -------------------------------------------------------  
+  // browse all events
+  // -------------------------------------------------------  
+  sysRc = browseEvents( _gohStoreQueue );   // read all events
+  if( sysRc != 0 )                          //
+  {                                         // free the event tree, all queue 
+    goto _door;                             // manager are still in the event tree.
+  }                                         // 
+                                            // this procedure is necessary if 
+  freeEventTree();                          // the last event of some queue 
+                                            // manager is acknowledged
   // -------------------------------------------------------  
   // acknowledge messages 
   // -------------------------------------------------------  
-  sysRc = acknowledgeMessages( );         // acknowledge messages through 
-  if( sysRc != 0 )                        //  moving them from store to the 
-  {                                       //  acknowledge queue
-    goto _door;                           //
-  }                                       //
-                                          //
+  sysRc = acknowledgeMessages( );           // acknowledge messages through 
+  if( sysRc != 0 )                          //  moving them from store to the 
+  {                                         //  acknowledge queue
+    goto _door;                             //
+  }                                         //
+                                            //
   // -------------------------------------------------------  
   // browse rest messages 
   // -------------------------------------------------------  
-  sysRc = browseEvents( _gohStoreQueue ); //
-  if( sysRc != 0 )                        //
-  {                                       //
-    goto _door;                           //
-  }                                       //
-                                          //
-#if(0)                                    //
-  endMq();                                // ignore reason, end of program
-#endif                                    //
-                                          //
+  sysRc = browseEvents( _gohStoreQueue );   //
+  if( sysRc != 0 )                          //
+  {                                         //
+    goto _door;                             //
+  }                                         //
+                                            //
+#if(0)                                      // ignore reason, end of program
+  endMq();                                  // endMq is handled by signals
+#endif                                      //
+                                            //
   // -------------------------------------------------------  
   // data output
   // -------------------------------------------------------  

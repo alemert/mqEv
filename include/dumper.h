@@ -31,3 +31,4 @@
 
 void printAllEventList();
 int printAllEventTable( char* dir );
+void touchEventFlag(char* wwwDir, char movedMsgQmgr[][MQ_Q_MGR_NAME_LENGTH+1]);

@@ -449,13 +449,13 @@ int moveMessages( PMQBYTE24 _msgIdArray, MQHOBJ _getoh, MQHOBJ _putoh )
     int loop = 1;                         // resizing the message buffer loop
     while( loop == 1 )                    // resize message buffer if message
     {                                     //  truncated
-      reason = mqGet( _ghConn   ,         // connection handle
-                     _getoh     ,         // pointer to queue handle
-                     buffer     ,         // message buffer
-                     &msgLng    ,         // buffer length
-                     &md        ,         // message Descriptor
-                     gmo        ,         // get message option 
-                     1         );         // wait interval in milli seconds
+      reason = mqGet( _ghConn,           // connection handle
+                      _getoh ,           // pointer to queue handle
+                      buffer ,           // message buffer
+                      &msgLng,           // buffer length
+                      &md    ,           // message Descriptor
+                      gmo    ,           // get message option 
+                      1     );           // wait interval in milli seconds
                                           //
       switch( reason )                    //
       {                                   //
@@ -585,47 +585,49 @@ MQLONG acknowledgeMessages()
   //   convert string into hex
   //   move messages from store queue to confirm queue
   // -------------------------------------------------------
-  msgIdArr = getStrArrayAttr( "ack" );    // get all message id's from 
-  if( !msgIdArr )                         //   the command line
-  {                                       // this has already been checked in 
-    goto _door;                           //   main(), message id is not NULL
-  }                                       //
-                                          //
-  msgIdArrSize = getAttrSize( "ack" );    // get nr. of message id's
-                                          //
+  msgIdArr = getStrArrayAttr( "ack" );      // get all message id's from 
+  if( !msgIdArr )                           //   the command line
+  {                                         // this has already been checked in 
+    goto _door;                             //   main(), message id is not NULL
+  }                                         //
+                                            //
+  msgIdArrSize = getAttrSize( "ack" );      // get nr. of message id's
+                                            //
   msgId24 = (PMQBYTE24) malloc( sizeof(MQBYTE24)*(msgIdArrSize+1) );
-  if( !msgId24 )                          // allocate memory for message id's
-  {                                       //
-    logger( LSTD_MEM_ALLOC_ERROR );       //
-    goto _door;                           //
-  }                                       //
-                                          //
-  for( i=0; i< msgIdArrSize; i++ )        // convert numerical message id 
-  {                                       //   to string
+  if( !msgId24 )                            // allocate memory for message id's
+  {                                         //
+    logger( LSTD_MEM_ALLOC_ERROR );         //
+    goto _door;                             //
+  }                                         //
+                                            //
+  for( i=0; i< msgIdArrSize; i++ )          // convert numerical message id 
+  {                                         //   to string
     msgIdStr2MQbyte( msgIdArr[i], (msgId24+i) );  
-  }                                       //
+  }                                         //
   memcpy( (msgId24+1), MQMI_NONE, sizeof(MQBYTE24) );
-                                          //
-  sysRc = moveMessages( msgId24       ,   // move messages from store to queue
-		                _gohStoreQueue,   // confirm queue 
-		                _gohAckQueue );   // move messages handles whole 
-  if( sysRc != 0 )                        // transaction including commit
-  {                                       // 
-    goto _door;                           //
-  }                                       //
-                                          //
-  _door :                                 // 
-                                          //
-  if( msgId24) free( msgId24 );           //
-                                          //
+                                            //
+  sysRc = moveMessages( msgId24      ,      // move messages from store to 
+                       _gohStoreQueue,      // confirm queue 
+                       _gohAckQueue );      // move messages handles whole 
+  if( sysRc != 0 )                          // transaction including commit
+  {                                         // 
+    goto _door;                             //
+  }                                         //
+                                            //
+  _door :                                   // 
+                                            //
+  if( msgId24) free( msgId24 );             //
+                                            //
   logFuncExit( );
   return sysRc  ;
 }
 
 /******************************************************************************/
 /*  accept messages                                                           */
+/*                  */
+/*    move messages from collection queue to store queue                      */
 /******************************************************************************/
-MQLONG acceptMessages( char *_movedMsgQmgr[MQ_Q_MGR_NAME_LENGTH] )
+MQLONG acceptMessages( char _movedMsgQmgr[TRANSACTION_SIZE][MQ_Q_MGR_NAME_LENGTH+1] )
 {
   logFuncCall( ) ;
   MQLONG sysRc ;
@@ -648,6 +650,7 @@ MQLONG acceptMessages( char *_movedMsgQmgr[MQ_Q_MGR_NAME_LENGTH] )
                                    //
   int movedMessages=0;             //
   int i;                           //
+  int j;                           //
                                    //
   // -------------------------------------------------------  
   // init vara
@@ -789,7 +792,7 @@ MQLONG acceptMessages( char *_movedMsgQmgr[MQ_Q_MGR_NAME_LENGTH] )
         {                                     //  where event was produced and 
 	  if( memcmp( _movedMsgQmgr[i]     ,  //  put it's name to the 
                       md.ReplyToQMgr       ,  //  _moveMsgQmgr array,
-                      MQ_Q_MGR_NAME_LENGTH ) != 0)      
+                      MQ_Q_MGR_NAME_LENGTH ) == 0)      
           {                                   // ignore queue manager already 
             break ;                           //  in the array (found in the 
           }                                   //  same transaction)
@@ -840,10 +843,33 @@ MQLONG acceptMessages( char *_movedMsgQmgr[MQ_Q_MGR_NAME_LENGTH] )
 	break;                                //
       }                                       //
     }                                         //
+    for( i=0; i<TRANSACTION_SIZE; i++ )       // trim blanks out of 
+    {                                         // queue manager name
+      if( _movedMsgQmgr[i][0]=='\0' )         //
+      {                                       //
+        break;                                //
+      }                                       //
+      for( j=0; j< MQ_Q_MGR_NAME_LENGTH; j++ )//
+      {                                       //
+        if( _movedMsgQmgr[i][j] == '\0' )     //
+	{                                     //
+          break;                              //
+	}                                     //
+        if( _movedMsgQmgr[i][j] == ' ' )      //
+	{                                     //
+          _movedMsgQmgr[i][j] ='\0' ;         //
+          break;                              //
+	}                                     //
+      }                                       //
+    }                                         //
   }                                           //
   else                                        // some error occurred
   {                                           //
-    reason = mqRollback( _ghConn );           // rollback 
+    memset( _movedMsgQmgr, 0      ,           // rollback 
+            MQ_Q_MGR_NAME_LENGTH  *           //
+            TRANSACTION_SIZE      *           //
+            sizeof(char)         );           //
+    reason = mqRollback( _ghConn );           //
     switch( reason )                          //
     {                                         //
       case MQRC_NONE : break ;                //

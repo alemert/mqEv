@@ -53,5 +53,5 @@ void printEventList();
 int handleDoneEvents();
 void msgIdStr2MQbyte( char* str, PMQBYTE24 msgid );
 MQLONG acknowledgeMessages();
-MQLONG acceptMessages( char *_movedMsgQmgr[MQ_Q_MGR_NAME_LENGTH] );
+MQLONG acceptMessages( char _movedMsgQmgr[TRANSACTION_SIZE][MQ_Q_MGR_NAME_LENGTH+1] );
 

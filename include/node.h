@@ -101,3 +101,5 @@ PMQBYTE24 getMsgIdPair();
 tMqiItem* findMqiItem( tMqiItem* anchor , MQLONG selector );
 //void freeMqiItemValue( tMqiItem *item );
 void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem );
+
+void freeEventTree();
