@@ -292,7 +292,7 @@ int browseEvents( MQHOBJ _ohQ )
   // -------------------------------------------------------  
   // init mq for get events
   // -------------------------------------------------------  
-  getMsgOpt.Options     |= MQGMO_BROWSE_NEXT; // browse messages
+  getMsgOpt.Options     |= MQGMO_BROWSE_FIRST;// browse messages
   getMsgOpt.MatchOptions = MQMO_NONE;         //
                                               //
   reason = mqOpenBag( &evBag );               //
@@ -317,6 +317,7 @@ int browseEvents( MQHOBJ _ohQ )
                         &getMsgOpt ,          // get message options
                          evBag    );          // bag
                                               //
+    getMsgOpt.Options |= MQGMO_BROWSE_NEXT;   // browse messages
     switch( reason )                          //
     {                                         //
       case MQRC_NONE :                        //
