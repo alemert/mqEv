@@ -5,14 +5,16 @@
 /*      - printAllEventList                                                   */
 /*      - printQmgrEventList                                                  */
 /*      - printEventList                                                      */
-/*      - printEvent                                      */
-/*      - getEventItem                                    */
-/*      - printMD                                                      */
-/*      - mqbyte2str                                                    */
-/*      - printAllEventTable                                      */
-/*      - printQmgrEventTable                                */
-/*      - fPrintEventTopLine                                */
-/*      - printEventTableLine                */
+/*      - printEvent                                                  */
+/*      - getEventItem                                            */
+/*      - printMD                                                             */
+/*      - mqbyte2str                                                          */
+/*      - printAllEventTable                                            */
+/*      - printQmgrEventTable                                      */
+/*      - fPrintEventTopLine                                      */
+/*      - printEventTableLine                      */
+/*      - touchAckFlag                        */
+/*      - flushEventFiles                    */
 /*                                            */
 /******************************************************************************/
 
@@ -23,6 +25,7 @@
 // ---------------------------------------------------------
 // system
 // ---------------------------------------------------------
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <limits.h>
@@ -31,6 +34,10 @@
 #define __USE_XOPEN
 #include <time.h>
 #undef _USE_XOPEN
+
+#include <sys/types.h>
+#include <dirent.h>
+#include <unistd.h>
 
 // ---------------------------------------------------------
 // mq
@@ -62,6 +69,10 @@ char _gBuff[MQEV_GLOBAL_BUFFER_LNG];
 /******************************************************************************/
 /*   D E F I N E S                                                            */
 /******************************************************************************/
+#define EVENT_SFX    ".event"
+#define TS_SFX       ".ts"
+#define ACK_SFX      ".ack"
+
 
 /******************************************************************************/
 /*   M A C R O S                                                              */
@@ -338,10 +349,10 @@ int printQmgrEventTable( const char *dir, tQmgrNode* qmgrNode )
   char fileName[NAME_MAX];      // ignore the length of the path 
   char *p;
                                                    //  
-  snprintf( fileName, NAME_MAX-strlen(".event"),   // build a name of the file
+  snprintf( fileName, NAME_MAX-strlen(EVENT_SFX),  // build a name of the file
 	        "%s/%s", dir, qmgrNode->qmgr  );   // {htmldir}/{qmgr}.event
   p = strchr( fileName, ' ' );                     // find 1st blank
-  if( p ) sprintf( p, ".event") ;                  // add suffix
+  if( p ) sprintf( p, EVENT_SFX ) ;                // add suffix
                                                    //
   fp = fopen( fileName, "w" );                     //open the file 
   if( !fp )                                        // handle error
@@ -350,9 +361,6 @@ int printQmgrEventTable( const char *dir, tQmgrNode* qmgrNode )
     sysRc = 1;                                     //
     goto _door;                                    //
   }                                                //
-
-//fprintf(fp,"hello world");
-// fclose(fp);
                                                    //
   printEventTopLine( fp, "Message Id"   ,          //
                          "Date/Time"    ,          //
@@ -471,7 +479,7 @@ void printEventTableLine( FILE* fp, tEvent* eventList )
 
 
 /******************************************************************************/
-/*  touch event flag file       */
+/*  touch event flag file                                     */
 /******************************************************************************/
 void touchEventFlag(char* dir, char movedMsgQmgr[][MQ_Q_MGR_NAME_LENGTH+1])
 {
@@ -488,7 +496,7 @@ void touchEventFlag(char* dir, char movedMsgQmgr[][MQ_Q_MGR_NAME_LENGTH+1])
   for( i=0; i<TRANSACTION_SIZE; i++ )
   {
     if( movedMsgQmgr[i][0] == '\0' ) break ;
-    sprintf( fileName, "%s/%s.ts", dir, movedMsgQmgr[i] );
+    sprintf( fileName, "%s/%s"EVENT_SFX""TS_SFX, dir, movedMsgQmgr[i] );
 
     fp = fopen( fileName, "w" );                     //open the file 
     if( !fp )                                        // handle error
@@ -503,3 +511,86 @@ void touchEventFlag(char* dir, char movedMsgQmgr[][MQ_Q_MGR_NAME_LENGTH+1])
   
   return ;
 }
+
+/******************************************************************************/
+/*  touch acknowledge flag file                        */
+/******************************************************************************/
+void touchAckFlag( char* dir, char *qmgrName )
+{
+  FILE *fp;
+
+  char fileName[NAME_MAX] ;
+
+  if( dir == NULL )
+  {
+    goto _door ;
+  }
+
+  if( qmgrName == NULL )
+  {
+    goto _door ;
+  }
+
+  sprintf( fileName, "%s/%s"ACK_SFX""TS_SFX, dir, qmgrName ) ;
+
+  fp = fopen( fileName, "w" );                     //open the file 
+  if( !fp )                                        // handle error
+  {                                                //
+    logger( LSTD_OPEN_FILE_FAILED, fileName );     //
+    goto _door;                                    //
+  }                                                //
+  fclose( fp );
+
+  _door :
+  
+  return ;
+}
+
+/******************************************************************************/
+/*   flush old events from existing files            */
+/******************************************************************************/
+int flushEventFiles( char* wwwDir )
+{
+  int sysRc = 0;
+
+  DIR *dp ;  
+  FILE *fp;
+  struct dirent *dirEntry ;
+
+  char *sfx ;
+  char fileName[NAME_MAX] ;
+
+  dp = opendir( wwwDir );
+  if( !dp )
+  {
+    logger( LSTD_OPEN_FILE_FAILED, wwwDir );     //
+    sysRc = 1;
+    goto _door ;
+  }
+
+  while( 1 ) 
+  {
+    dirEntry = readdir( dp );
+    if( !dirEntry ) break ; 
+
+    sfx = strstr( dirEntry->d_name, EVENT_SFX ) ;
+    if( !sfx ) continue ;
+
+    if( strlen(sfx) != strlen(EVENT_SFX) ) continue ;
+
+    sprintf( fileName, "%s/%s", wwwDir, dirEntry->d_name );
+
+    fp = fopen( fileName, "w" );
+    fclose(fp) ;
+
+    printf( "%s\n", fileName );
+     
+  }
+
+  _door:
+
+  closedir( dp );
+
+  return sysRc ;
+}
+

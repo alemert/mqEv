@@ -1,8 +1,8 @@
 /******************************************************************************/
-/*   M Q   E V E N T   N O D E   U T I L I T I E S                         */
-/*              */
-/*   application: mqevent                                       */
-/*   module     : node                                 */
+/*   M Q   E V E N T   N O D E   U T I L I T I E S                            */
+/*                      */
+/*   application: mqevent                                                     */
+/*   module     : node                                           */
 /*                                                                            */
 /*   functions:                                                               */
 /*    - bag2mqiNode                                                           */
@@ -20,11 +20,12 @@
 /*    - addEventNode                                                          */
 /*    - item2event                                                            */
 /*    - moveMqiItem                                                           */
-/*    - getMsgIdPair                                                  */
-/*    - matchEventReason                                                   */
-/*    - freeEventTree                            */
-/*    - freeItemTree                        */
-/*    - freeItemList                    */
+/*    - getMsgIdPair                                                          */
+/*    - matchEventReason                                                      */
+/*    - freeEventTree                                      */
+/*    - freeItemTree                                  */
+/*    - freeItemList                                    */
+/*    - findEmtpyQueueManager                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -767,7 +768,7 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
 
 /******************************************************************************/
 /*  move mqi item                                                        */
-/*                                                                   */
+/*                                                                     */
 /*    description:                                         */
 /*    items will be moved from item list to event list       */
 /******************************************************************************/
@@ -803,8 +804,8 @@ void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event )
 
 /******************************************************************************/
 /*  get message id pairs                                       */
-/*                              */
-/*    description:                          */
+/*                                      */
+/*    description:                            */
 /*      match close event and open event (f.e. stop/start queue manager or    */
 /*      channel or queue depth high/low water               */
 /*      up to MSGID_PAIR_AMOUNT/2 pairs are possible. This function will be   */
@@ -1013,3 +1014,29 @@ void freeItemList( tMqiItem *_itemNode )
     itemNode = nextNode ;
   }
 }
+
+/******************************************************************************/
+/* find empty queue manager node                        */
+/******************************************************************************/
+#if(0)
+char* findEmtpyQueueManager()
+{
+  tQmgrNode *node = *_gEventList = NULL;
+
+  while( node )
+  {
+    if( node->doubleEvent == NULL &&
+        node->qmgrEvent   == NULL &&
+        node->singleEvent == NULL  )
+    {
+      break ;
+    }
+    node = node->next ;
+  }
+
+  if( node == NULL ) return NULL ;
+  return node->qmgr ;
+}
+#endif
+
+

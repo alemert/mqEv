@@ -287,6 +287,8 @@ int browseEvents( MQHOBJ _ohQ )
 //MQLONG  compCode;                  //
   MQLONG  reason  = MQRC_NONE;       //
                                      //
+  int firstBrowse = 1 ;              //
+                                     //
   sysRc = reason;                    //
                                      //
   // -------------------------------------------------------  
@@ -317,7 +319,13 @@ int browseEvents( MQHOBJ _ohQ )
                         &getMsgOpt ,          // get message options
                          evBag    );          // bag
                                               //
-    getMsgOpt.Options |= MQGMO_BROWSE_NEXT;   // browse messages
+    if( firstBrowse )                         //
+    {                                         //
+      getMsgOpt.Options -= MQGMO_BROWSE_FIRST;// 
+      getMsgOpt.Options |= MQGMO_BROWSE_NEXT; // 
+      firstBrowse = 0;                        //
+    }                                         //
+                                              //
     switch( reason )                          //
     {                                         //
       case MQRC_NONE :                        //
@@ -568,7 +576,7 @@ void msgIdStr2MQbyte( char* _str, PMQBYTE24 _pmsgid )
 /******************************************************************************/
 /*  acknowledge messages                                                      */
 /******************************************************************************/
-MQLONG acknowledgeMessages()
+MQLONG acknowledgeMessages( )
 {
   logFuncCall( ) ;
   MQLONG sysRc ;

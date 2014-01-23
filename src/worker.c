@@ -140,31 +140,18 @@ int htmlWorker()
     goto _door;                                //
   }                                            //
                                                //
-#if(0)
   // -------------------------------------------------------
-  // browse messages in the store queue
+  // flush old events from existing files
   // -------------------------------------------------------
-  sysRc = browseEvents( _gohStoreQueue );      // browse events 
-  if( sysRc != 0 )                             //
-  {                                            //
-    goto _door;                                //
-  }                                            //
-                                               //
-  // -------------------------------------------------------
-  // list events on html
-  // -------------------------------------------------------
-  sysRc = printAllEventTable( wwwDir );        // write data to the WWW-interface 
-  if( sysRc != 0 )                             //  directory
-  {                                            //
-    goto _door;                                //
-  }                                            //
-                                               //
-#endif
+  flushEventFiles( wwwDir ); 
+
   // -------------------------------------------------------
   // major loop
   // -------------------------------------------------------
   while( 1 )                                   //
   {                                            //
+    freeEventTree();                           // get rit of old events
+                                               //
     // -----------------------------------------------------
     // browse messages in the store queue
     // -----------------------------------------------------
@@ -242,6 +229,8 @@ int ackWorker( )
   logFuncCall( ) ;
   int sysRc = 0 ;
 
+  PMQMD pmd ;
+
   tIniNode *searchIni ;    // data structure for getting searching in ini files
   char     *wwwDir    ;    // directory for raw html data
 
@@ -298,12 +287,12 @@ int ackWorker( )
   // -------------------------------------------------------  
   // data output
   // -------------------------------------------------------  
-  sysRc = printAllEventTable( wwwDir );   //
-  if( sysRc != 0 )                        //
-  {                                       //
-    goto _door;                           //
-  }                                       //
-  _door :                                 // 
+  sysRc = printAllEventTable( wwwDir );     //
+  if( sysRc != 0 )                          //
+  {                                         //
+    goto _door;                             //
+  }                                         //
+  _door :                                   // 
   
   logFuncExit( ) ;
   return sysRc ;

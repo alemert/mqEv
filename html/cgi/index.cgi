@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+
 ################################################################################
 # mq event web interface
 ################################################################################
@@ -36,6 +37,12 @@ my $wwwDir = "/var/mq_misc/www/" ;
 
 my $_attr = cmdLn ;
 
+my $cmdlnAttr ;
+foreach my $attr ( keys %$_attr )
+{
+  $cmdlnAttr .= "$attr=$_attr->{$attr} <br>\n" ;
+}
+
 ################################################################################
 #   M A I N  
 ################################################################################
@@ -45,6 +52,11 @@ if( exists $_attr->{msgid} )
    $ENV{LD_LIBRARY_PATH}=$ENV{LD_LIBRARY_PATH}.':'."/home/mertale/NetBeansProjects/mqEv/lib/gcc/64/Linux.x86_64/" ;
   system( "/home/mertale/NetBeansProjects/mqEv/bin/gcc/64/Linux.x86_64/mqev --ack $_attr->{msgid} --ini  /home/mertale/NetBeansProjects/mqEv/etc/ini/mqev.apache.ini") ;
   delete $_attr->{msgid} ;
+  if( exists $_attr->{qmgr} )
+  {
+    open ACK, ">$wwwDir/$_attr->{qmgr}.ack" ;
+    close ACK ;
+  }
 }
 
 my $_qmgr = readEventFiles $wwwDir ;
@@ -60,3 +72,4 @@ exists $_attr->{cmd} &&
 
 closeHeader ;
 
+# print $cmdlnAttr ;

@@ -13,18 +13,34 @@ sub readEventFiles
     $qmgr{$qmgr}{foo} = '' ;            # create empty hash node
     delete $qmgr{$qmgr}{foo} ;          #  create empty hash node
                                         #
-    my @stat = stat $qmgrFile ;         # calculate the age of the file
-    my @fileAge = localtime( $stat[9] );  #
+    my @stat = stat $qmgrFile.".ts" ;   # calculate the age of the event file 
+    my @fileAge = localtime( $stat[9] );#
     my $ss   = $fileAge[0] ;            #
     my $mm   = $fileAge[1] ;            #
     my $hh   = $fileAge[2] ;            #
     my $dd   = $fileAge[3] ;            #
     my $MM   = $fileAge[4] ;            #
     my $YYYY = $fileAge[5] + 1900 ;     #
-    $qmgr{$qmgr}{TS} = sprintf( "%4d-%2d-%2d!%2d:%2d:%2s" , 
+    $qmgr{$qmgr}{EVENT_TS} = sprintf( "%4d-%2d-%2d!%2d:%2d:%2s" , 
                                  $YYYY,$MM,$dd,$hh,$mm,$ss); 
-    $qmgr{$qmgr}{TS} =~ s/ /0/g; 
-    $qmgr{$qmgr}{TS} =~ s/!/ /g; 
+    $qmgr{$qmgr}{EVENT_TS} =~ s/ /0/g;  #
+    $qmgr{$qmgr}{EVENT_TS} =~ s/!/ /g;  #
+                                        #
+    my $ackFile = $qmgrFile ;
+    $ackFile =~ s/\.event$/.ack/;
+
+    my @stat = stat $ackFile ;          # calculate the age of the 
+    my @fileAge = localtime( $stat[9] );#  acknowledge file 
+    my $ss   = $fileAge[0] ;            #
+    my $mm   = $fileAge[1] ;            #
+    my $hh   = $fileAge[2] ;            #
+    my $dd   = $fileAge[3] ;            #
+    my $MM   = $fileAge[4] ;            #
+    my $YYYY = $fileAge[5] + 1900 ;     #
+    $qmgr{$qmgr}{ACK_TS} = sprintf( "%4d-%2d-%2d!%2d:%2d:%2s" , 
+                                 $YYYY,$MM,$dd,$hh,$mm,$ss); 
+    $qmgr{$qmgr}{ACK_TS} =~ s/ /0/g;  #
+    $qmgr{$qmgr}{ACK_TS} =~ s/!/ /g;  #
                                         #
     open QMGR, "$qmgrFile" ;
     <QMGR>;
@@ -127,25 +143,34 @@ sub showQmgr
   foreach my $qmgr ( sort keys %$_qmgr )
   {
     my $img = "/develop/icons/red-cross-16.png" ;
-       $img = "/develop/icons/tick-icon-16.png" if scalar keys %{$_qmgr->{$qmgr}} < 2 ;
+       $img = "/develop/icons/tick-icon-16.png" if scalar keys %{$_qmgr->{$qmgr}} < 3 ;
 
     my $class = "qmgr-inactive" ;
        $class = "qmgr-active" if $qmgr eq $activeQmgr ;
 
     my $url = setHref $_attr , "qmgr", $qmgr ;
-    my $evntCnt = ( scalar keys %{$_qmgr->{$qmgr}} ) -1 ;
+
+    my $evntCnt = ( scalar keys %{$_qmgr->{$qmgr}} ) -2 ;
     if( $evntCnt == 0 )    { $evntCnt = "no event" ; }
     elsif( $evntCnt == 1 ) { $evntCnt = "1 event"  ; }
     else { $evntCnt .= " events" ; }
     $evntCnt = $evntCnt." since" ;
 
-    print "<div class=$class>";
+    print "<div class=$class>\n";
     print "<div class=qmgr>";
     print "<a class=qmgr href=\"$url\"><img class=qmgr src=\"$img\">$qmgr </a>";
-    print "</div>";
-    print "<div class=qmgr-age>$evntCnt<br>$_qmgr->{$qmgr}{TS}</div>\n";
     print "</div>\n";
-    delete $_qmgr->{$qmgr}{TS};
+#   print "<div class=qmgr-age>$evntCnt<br>$_qmgr->{$qmgr}{EVENT_TS}</div>\n";
+#   print "<div class=qmgr-age>" ;
+    print "<table class=qmgr-age>";
+    print "<tr><td>$evntCnt</td><td>last acknowledge</td></tr>";
+    print "<tr><td>$_qmgr->{$qmgr}{EVENT_TS}</td>";
+    print "<td>$_qmgr->{$qmgr}{ACK_TS}</td></tr>";
+    print "</table>";
+#   print "</div>\n";
+    print "</div>\n";
+    delete $_qmgr->{$qmgr}{EVENT_TS};
+    delete $_qmgr->{$qmgr}{ACK_TS};
     showEvents $_qmgr->{$qmgr} if $qmgr eq $activeQmgr;
   }
   print "</div>\n";

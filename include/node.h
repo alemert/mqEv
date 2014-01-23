@@ -103,3 +103,5 @@ tMqiItem* findMqiItem( tMqiItem* anchor , MQLONG selector );
 void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem );
 
 void freeEventTree();
+
+// char* findEmtpyQueueManager() ;

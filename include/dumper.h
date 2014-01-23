@@ -30,8 +30,8 @@
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
 
-#if(0)
 void printAllEventList();
 int printAllEventTable( char* dir );
 void touchEventFlag(char* wwwDir, char movedMsgQmgr[][MQ_Q_MGR_NAME_LENGTH+1]);
-#endif
+void touchAckFlag( char* dir, char *qmgrName );
+int flushEventFiles( char* wwwDir );

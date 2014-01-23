@@ -28,7 +28,7 @@ a.qmgr
 div.qmgr
 {
   display: inline-block ;
-  width :    calc( 100% - 100px) ;
+  width :  calc( 100% - 2px - 200px ) ;
   float: left  ;
 }
 
@@ -58,12 +58,14 @@ div.qmgr-active
   clear:both;
 }
 
-div.qmgr-age
+.qmgr-age
 {
   display: inline-block;
-  width: 92px;
+  width: 200px;
   float: right ;
   font-size: xx-small;
-  vertical-align: middle;
+  vertical-align: top;
   height: 100%;
+  border-spacing: 10px 0px;
 }
+
