@@ -229,8 +229,6 @@ int ackWorker( )
   logFuncCall( ) ;
   int sysRc = 0 ;
 
-  PMQMD pmd ;
-
   tIniNode *searchIni ;    // data structure for getting searching in ini files
   char     *wwwDir    ;    // directory for raw html data
 

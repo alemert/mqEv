@@ -174,7 +174,11 @@ int initPrg( int argc, const char* argv[] )
   {                                                //
     sysRc = initLogging( logName, logLevel ) ;     // set log file name to
   }                                                // cmdln-cfg or ini-cfg
-  if( sysRc != 0 ) goto _door;                     //
+  if( sysRc != 0 )       //
+  {                //
+    fprintf(stderr,"logging not possible, abort\n");//
+    goto _door;                     //
+  }                  //
                                                    //
   logger(LSTD_PRG_START,basename((char*) argv[0]));//
                                                    //

@@ -581,10 +581,14 @@ int flushEventFiles( char* wwwDir )
     sprintf( fileName, "%s/%s", wwwDir, dirEntry->d_name );
 
     fp = fopen( fileName, "w" );
-    fclose(fp) ;
+    if( !fp )
+    {
+      logger( LSTD_OPEN_FILE_FAILED, fileName );     //
+      sysRc = 1;
+      goto _door ;
+    }
 
-    printf( "%s\n", fileName );
-     
+    fclose(fp) ;
   }
 
   _door:

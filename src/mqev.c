@@ -91,7 +91,7 @@
 /******************************************************************************/
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
-int moveMessages( PMQBYTE24 msgIdArray, int getQueue, int putQueue );
+int moveMessages( PMQBYTE24 msgIdArray, MQHOBJ getQueue, MQHOBJ putQueue );
 
 /******************************************************************************/
 /*                                                                            */
@@ -128,7 +128,12 @@ int initMq( )
   switch( sysRc )                          // connect to qmgr 
   {                                        //
     case MQRC_NONE : break ;               // connect ok
-    default        : goto _door ;          // connect failed
+    case MQRC_Q_MGR_NAME_ERROR :           //
+    {                                      //
+      logger( LMQM_UNKNOWN_QMGR, qmgr );   //
+      goto _door ;                         //
+    }                                      //
+    default : goto _door ;                 // connect failed
   }                                        //
                                            //
   // -------------------------------------------------------
