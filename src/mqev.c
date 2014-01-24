@@ -170,6 +170,11 @@ int initMq( )
   switch( sysRc )                          // rc mqopen
   {                                        //
     case MQRC_NONE : break;                // open ok
+    case MQRC_UNKNOWN_OBJECT_NAME :        //
+    {                                      //
+      logger(LMQM_UNKNOWN_OBJECT,evQueue); //
+      goto _door ;                         //
+    }                                      //
     default        : goto _door ;          // open failed
   }                                        //
                                            //
@@ -205,6 +210,11 @@ int initMq( )
   switch( sysRc )                          // rc mqopen
   {                                        //
     case MQRC_NONE : break;                // open ok
+    case MQRC_UNKNOWN_OBJECT_NAME :        //
+    {                                      //
+      logger( LMQM_UNKNOWN_OBJECT, storeQueue ); 
+      goto _door ;                         //
+    }                                      //
     default        : goto _door ;          // open failed
   }                                        //
                                            //
@@ -239,6 +249,11 @@ int initMq( )
   switch( sysRc )                          // rc mqopen
   {                                        //
     case MQRC_NONE : break;                // open ok
+    case MQRC_UNKNOWN_OBJECT_NAME :        //
+    {                                      //
+      logger( LMQM_UNKNOWN_OBJECT, ackQueue ); 
+      goto _door ;                         //
+    }                                      //
     default        : goto _door ;          // open failed
   }                                        //
                                            //

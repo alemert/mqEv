@@ -4,6 +4,10 @@
     <df root="." name="mqEv">
       <df name="bin">
         <df name="gcc">
+          <df name="32">
+            <df name="Linux.x86_64">
+            </df>
+          </df>
           <df name="64">
             <df name="Linux.x86_64">
             </df>
@@ -92,6 +96,10 @@
       </df>
       <df name="obj">
         <df name="gcc">
+          <df name="32">
+            <df name="Linux.x86_64">
+            </df>
+          </df>
           <df name="64">
             <df name="Linux.x86_64">
             </df>
@@ -181,6 +189,10 @@
       <df name="test">
         <df name="bin">
           <df name="gcc">
+            <df name="32">
+              <df name="Linux.x86_64">
+              </df>
+            </df>
             <df name="64">
               <df name="Linux.x86_64">
               </df>
@@ -196,6 +208,10 @@
         </df>
         <df name="log">
           <df name="gcc">
+            <df name="32">
+              <df name="Linux.x86_64">
+              </df>
+            </df>
             <df name="64">
               <df name="Linux.x86_64">
               </df>
@@ -204,6 +220,10 @@
         </df>
         <df name="obj">
           <df name="gcc">
+            <df name="32">
+              <df name="Linux.x86_64">
+              </df>
+            </df>
             <df name="64">
               <df name="Linux.x86_64">
               </df>
@@ -233,6 +253,10 @@
         <df name="cat">
           <df name="obj">
             <df name="gcc">
+              <df name="32">
+                <df name="Linux.x86_64">
+                </df>
+              </df>
               <df name="64">
                 <df name="Linux.x86_64">
                 </df>
@@ -245,6 +269,10 @@
         <df name="cmdl">
           <df name="obj">
             <df name="gcc">
+              <df name="32">
+                <df name="Linux.x86_64">
+                </df>
+              </df>
               <df name="64">
                 <df name="Linux.x86_64">
                 </df>
@@ -258,6 +286,10 @@
         </df>
         <df name="dep">
           <df name="gcc">
+            <df name="32">
+              <df name="Linux.x86_64">
+              </df>
+            </df>
             <df name="64">
               <df name="Linux.x86_64">
               </df>
@@ -293,6 +325,10 @@
           </df>
           <df name="obj">
             <df name="gcc">
+              <df name="32">
+                <df name="Linux.x86_64">
+                </df>
+              </df>
               <df name="64">
                 <df name="Linux.x86_64">
                 </df>
