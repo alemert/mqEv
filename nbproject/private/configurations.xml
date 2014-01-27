@@ -309,6 +309,9 @@
         <df name="vers">
           <df name="include">
             <df name="msgcat">
+              <in>lgmqe.rev</in>
+              <in>lgmqm.rev</in>
+              <in>lgstd.rev</in>
             </df>
             <in>ctl.rev</in>
             <in>dumper.rev</in>

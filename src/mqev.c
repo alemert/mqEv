@@ -78,6 +78,8 @@
   MQOD    _godStoreQueue={MQOD_DEFAULT};     // global object description and
   MQHOBJ  _gohStoreQueue=MQHO_UNUSABLE_HOBJ; // object handler for store queue 
                                              //
+  MQOD    _godErrQueue={MQOD_DEFAULT};       // global object description and
+  MQHOBJ  _gohErrQueue=MQHO_UNUSABLE_HOBJ;   // object handler for error queue 
                                              //
 /******************************************************************************/
 /*   D E F I N E S                                                            */
@@ -222,8 +224,8 @@ int initMq( )
   // open acknowledge queue
   // -------------------------------------------------------
   char* ackQueue = getIniStrValue( getIniNode( "connect"    , "queue",
-					       "acknowledge", NULL  ), 
-				               "name" ); 
+                                               "acknowledge", NULL  ), 
+				                   "name"                           ); 
                                            //
   if( ackQueue == NULL )                   // if acknowledge queue name not 
   {                                        // found in ini file abort process
@@ -252,6 +254,44 @@ int initMq( )
     case MQRC_UNKNOWN_OBJECT_NAME :        //
     {                                      //
       logger( LMQM_UNKNOWN_OBJECT, ackQueue ); 
+      goto _door ;                         //
+    }                                      //
+    default        : goto _door ;          // open failed
+  }                                        //
+                                           //
+  // -------------------------------------------------------
+  // open error queue
+  // -------------------------------------------------------
+  char* errQueue = getIniStrValue( getIniNode( "connect", "queue",
+                                               "error"  ,  NULL ), 
+                                   "name"                       ); 
+                                           //
+  if( errQueue == NULL )                   // if acknowledge queue name not 
+  {                                        // found in ini file abort process
+    logger( LSTD_UNKNOWN_INI_ATTR_ERR,     //
+	   "connect - queue - error - name" );
+    logger( LSTD_GEN_ERR, __FUNCTION__ );  //
+    sysRc = 1 ;                            //
+    goto _door;                            //
+  }                                        // set queue name in object 
+                                           //  description structure
+  memset(_godErrQueue.ObjectName,(int) ' ',MQ_Q_NAME_LENGTH);
+  memcpy(_godErrQueue.ObjectName,errQueue ,MQ_Q_NAME_LENGTH);
+                                           //
+  sysRc = mqOpenObject(                    //
+              _ghConn                ,     // qmgr connection handle 
+              &_godErrQueue          ,     // event q object descriptor 
+              MQOO_OUTPUT            |     //   open object for put
+              MQOO_SET_ALL_CONTEXT   |     //   keep original date/time im MQMD
+              MQOO_FAIL_IF_QUIESCING ,     //   open fails if qmgr is stopping
+              &_gohErrQueue         );     // object handle event queue
+                                           //
+  switch( sysRc )                          // rc mqopen
+  {                                        //
+    case MQRC_NONE : break;                // open ok
+    case MQRC_UNKNOWN_OBJECT_NAME :        //
+    {                                      //
+      logger( LMQM_UNKNOWN_OBJECT, errQueue ); 
       goto _door ;                         //
     }                                      //
     default        : goto _door ;          // open failed
@@ -306,6 +346,8 @@ int browseEvents( MQHOBJ _ohQ )
                                      //
 //MQLONG  compCode;                  //
   MQLONG  reason  = MQRC_NONE;       //
+            //
+  MQBYTE24 msgId[2];      //
                                      //
   int firstBrowse = 1 ;              //
                                      //
@@ -350,7 +392,12 @@ int browseEvents( MQHOBJ _ohQ )
     {                                         //
       case MQRC_NONE :                        //
       {                                       //
-        bag2mqiNode( &evMsgDscr, evBag );     //
+        if( bag2mqiNode( &evMsgDscr, evBag ) < 2 ) 
+        {
+          memcpy( msgId[0], evMsgDscr.MsgId, sizeof(MQBYTE24) );
+          memcpy( msgId[1], MQMI_NONE      , sizeof(MQBYTE24) );
+          sysRc = moveMessages( msgId, _gohStoreQueue, _gohErrQueue );
+        }
         continue;                             //
       }                                       //
       case MQRC_NO_MSG_AVAILABLE :            //

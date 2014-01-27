@@ -100,7 +100,7 @@ tQmgrNode* lastQmgrNode( );
 tEvent* newEventNode();
 tEvent* addEventNode( tEvent *anchor, tEvent *node );
 
-void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd );
+int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd );
 void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event );
 
 MQLONG matchEventReason( MQLONG reason );
@@ -119,6 +119,8 @@ void freeItemList( tMqiItem *_itemNode );
 /******************************************************************************/
 int bag2mqiNode( PMQMD pmd, MQHBAG bag )
 {
+  int sysRc = 0 ;
+
   MQLONG itemCount;
   MQLONG itemType ;
   MQLONG selector ;
@@ -241,27 +243,45 @@ int bag2mqiNode( PMQMD pmd, MQHBAG bag )
       }                                                  //
       case MQITEM_BAG :                                  //
       {                                                  //
-        break;                                           //
+      logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) itemType,
+                                              __FILE__, __LINE__ );
+        sysRc = -3;                                      //
+        goto _door;                                      //
       }                                                  //
       case MQITEM_BYTE_STRING :                          //
       {                                                  //
-        break;                                           //
+      logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) itemType,
+                                              __FILE__, __LINE__ );
+        sysRc = -3;                                      //
+        goto _door;                                      //
       }                                                  //
       case MQITEM_INTEGER_FILTER :                       //
       {                                                  //
-        break;                                           //
+      logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) itemType,
+                                              __FILE__, __LINE__ );
+        sysRc = -3;                                      //
+        goto _door;                                      //
       }                                                  //
       case MQITEM_STRING_FILTER :                        //
       {                                                  //
-        break;                                           //
+      logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) itemType,
+                                              __FILE__, __LINE__ );
+        sysRc = -3;                                      //
+        goto _door;                                      //
       }                                                  //
       case MQITEM_INTEGER64 :                            //
       {                                                  //
-        break;                                           //
+      logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) itemType,
+                                              __FILE__, __LINE__ );
+        sysRc = -3;                                      //
+        goto _door;                                      //
       }                                                  //
       case MQITEM_BYTE_STRING_FILTER :                   //
       {                                                  //
-        break;                                           //
+      logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) itemType,
+                                              __FILE__, __LINE__ );
+        sysRc = -3;                                      //
+        goto _door;                                      //
       }                                                  //
     }                                                    //
                                                          //
@@ -282,16 +302,21 @@ int bag2mqiNode( PMQMD pmd, MQHBAG bag )
     goto _door;                                          //
   }                                                      //
   qmgrNode = addQmgrNode( qmgrItem->value.strVal );      //
-  freeMqiItemValue( qmgrItem );            //
+  freeMqiItemValue( qmgrItem );                          //
   deleteMqiItem( anchor, qmgrItem );                     //
                                                          //
-  item2event( qmgrNode, anchor, pmd );                   //
+  sysRc = item2event( qmgrNode, anchor, pmd );           //
+  if( sysRc < 0 )                                        //
+  {                                                      //
+    goto _door;                                          //
+  }                                                      //
                                                          //
-  free(anchor);
   _door:
+	
+  if(anchor) free(anchor);
 
 //  freeItemList( anchor );
-  return 0;
+  return sysRc ;
 }
 
 /******************************************************************************/
@@ -633,11 +658,23 @@ tEvent* addEventNode( tEvent *anchor, tEvent *node )
 
 /******************************************************************************/
 /* item to event                                                              */
+/*                                                                            */
+/*  description:                                                              */
+/*    convert item list to event list                                      */
+/*                                                                            */
+/*  return code:                                                              */
+/*     0: OK                                                                  */
+/*     1: empty input (MQI-Item empty                                         */
+/*    -1: missing code, message should go to the error queue                  */
+/*    -2: missing code, message should go to the error queue              */
+/*                                                                       */
 /******************************************************************************/
-void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
+int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
 {
   logFuncCall( ) ;
-  
+ 
+  int sysRc = 0;
+
   tMqiItem *mqiItem;
   tMqiItem *nextMqiItem;
   tMqiItem *tmpItem;
@@ -648,11 +685,14 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
     goto _door ;                             //
   }                                          //
 
-  
-  MQLONG eventList = 0 ;
+  MQLONG eventType = 0 ;     // event type 
+                             //  - MQCMD_Q_MGR_EVENT 
+                             //  - MQCMD_CHANNEL_EVENT
+              // 
    
   if( anchor == NULL )
   {
+    sysRc = 1;
     goto _door;  
   }
 
@@ -687,7 +727,7 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
       // ---------------------------------------------------
       case MQIASY_COMMAND :                // if command MQCMD_Q_MGR_EVENT 
       {                                    // MQIASY_REASON has to be evaluated at 
-        eventList = mqiItem->value.intVal; // at later stage in order to assign
+        eventType = mqiItem->value.intVal; // at later stage in order to assign
         freeMqiItemValue( mqiItem );       // stop/start qmgr events to a 
         deleteMqiItem(anchor,mqiItem);     // special list 
         break;                             //
@@ -696,6 +736,9 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
       // items to be moved in event list
       // ---------------------------------------------------
       case MQIASY_REASON    :              // reason code 
+      // ---------------------------------------------------
+      // Queue Manager Event
+      // ---------------------------------------------------
       case MQIA_APPL_TYPE   :              // application type
       case MQCACF_APPL_NAME :              // application name
       case MQCA_Q_NAME      :              // queue name
@@ -704,6 +747,11 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
       case MQIACF_OPEN_OPTIONS     :       // not authorized (open)
       case MQCA_BASE_OBJECT_NAME   :       // dlq reason
       case MQIA_BASE_TYPE          :       // dlq reason (combined with above)
+      // ---------------------------------------------------
+      // Channel events
+      // ---------------------------------------------------
+      case MQCACH_CHANNEL_NAME     :       // channel name
+      case MQCACH_XMIT_Q_NAME      :
       {
         moveMqiItem( mqiItem, anchor, event );
         break;
@@ -711,14 +759,21 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
       
       default : 
       {
-        printf( "missing selector %d\n", (int) mqiItem->selector );
+        logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) mqiItem->selector,
+	                                        __FILE__, __LINE__ );
+	sysRc = -1 ;
+        goto _door ;
       }
     }
              
     mqiItem = nextMqiItem;
   }
   
-  switch( eventList )
+  // -------------------------------------------------------
+  // there should be exact one MQIASY_COMMAND item in the bag
+  // evaluate it
+  // -------------------------------------------------------
+  switch( eventType )
   {
     // -----------------------------------------------------
     // queue manager event 
@@ -752,48 +807,66 @@ void item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
           break;                                      //
         }                                             //
       }                                               //
-      break;                                          // switch( eventList )
+      break;                                          // switch( eventType )
     }                                                 //
+    // -----------------------------------------------------
+    // channel event
+    // -----------------------------------------------------
+    case MQCMD_CHANNEL_EVENT:
+    {
+      qmgrNode->qmgrEvent = event ;
+      break ;
+    }
+    // -----------------------------------------------------
+    // not a queue manager event
+    // -----------------------------------------------------
     default :                                         //
     {                                                 //
-      printf( "missing selector %d\n",(int)eventList);//
+      logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) mqiItem->selector,
+                                              __FILE__, __LINE__ );
+      sysRc = -2;                                     //
+      goto _door;                                     //
     }                                                 //
   }
   
   _door:
   logFuncExit( ) ;
-  return;
+  return sysRc ;
 }
 
 
 /******************************************************************************/
-/*  move mqi item                                                        */
-/*                                                                     */
-/*    description:                                         */
-/*    items will be moved from item list to event list       */
+/*  move mqi item                                                             */
+/*                                                                            */
+/*    description:                                                            */
+/*    items will be moved from the item list (anchor) to event list             */
+/*                                                                            */
 /******************************************************************************/
-void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event )
+
+this function does not work
+
+void moveMqiItem( tMqiItem *actNode, tMqiItem *anchor, tEvent *event )
 {
   logFuncCall( ) ;
-  tMqiItem *prev = anchor;
+  tMqiItem *itemNode = anchor;
   tMqiItem *lastEvItem = NULL ;
   
-  while( prev->next != item )
+  while( itemNode->next != actNode )
   {
-    prev = prev->next;
-    if( !prev ) goto _door;
+    itemNode = itemNode->next;
+    if( !itemNode ) goto _door;
   }
 
-  prev->next = item->next;
-  item->next = NULL;
+  itemNode->next = actNode->next;
+  actNode->next = NULL;
   if( !(event->item) )
   {
-    event->item = item;
+    event->item = actNode;
   }
   else
   {
     lastEvItem = lastMqiItem( event->item );
-    lastEvItem->next = item;
+    lastEvItem->next = actNode;
   }
   
   _door:
@@ -803,14 +876,15 @@ void moveMqiItem( tMqiItem *item, tMqiItem *anchor, tEvent *event )
 }
 
 /******************************************************************************/
-/*  get message id pairs                                       */
-/*                                      */
-/*    description:                            */
+/*  get message id pairs                                           */
+/*                                                      */
+/*    description:                                    */
 /*      match close event and open event (f.e. stop/start queue manager or    */
 /*      channel or queue depth high/low water               */
 /*      up to MSGID_PAIR_AMOUNT/2 pairs are possible. This function will be   */
 /*      recalled once more with the next main() cycle if there are more then  */
 /*      MSGID_PAIR_AMOUNT event messages on the queue        */
+/*                  */
 /******************************************************************************/
 PMQBYTE24 getMsgIdPair()
 {
@@ -837,7 +911,7 @@ PMQBYTE24 getMsgIdPair()
   memcpy( _gMsgIdPair, MQMI_NONE , MSGID_PAIR_AMOUNT );
 
   msgIdCnt = 0;
-                            //
+                                              //
   while( qmgrNode )                           // check all queue manager
   {                                           //
     // -----------------------------------------------------  
