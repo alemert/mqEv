@@ -24,7 +24,6 @@
       </df>
       <df name="html">
         <df name="cgi">
-          <in>index.cgi</in>
         </df>
         <df name="css">
         </df>
@@ -43,6 +42,7 @@
         <in>ctl.h</in>
         <in>dumper.h</in>
         <in>inihnd.h</in>
+        <in>level.h</in>
         <in>main.h</in>
         <in>mqbase.h</in>
         <in>mqdump.h</in>
@@ -179,6 +179,7 @@
       </df>
       <df name="src">
         <in>dumper.c</in>
+        <in>level.c</in>
         <in>main.c</in>
         <in>mqev.c</in>
         <in>node.c</in>
@@ -316,6 +317,7 @@
             <in>ctl.rev</in>
             <in>dumper.rev</in>
             <in>inihnd.rev</in>
+            <in>level.rev</in>
             <in>mqbase.rev</in>
             <in>mqdump.rev</in>
             <in>mqev.rev</in>
@@ -340,6 +342,7 @@
           </df>
           <df name="src">
             <in>dumper.rev</in>
+            <in>level.rev</in>
             <in>main.rev</in>
             <in>mqev.rev</in>
             <in>node.rev</in>

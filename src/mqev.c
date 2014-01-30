@@ -337,7 +337,8 @@ void endMq()
 int browseEvents( MQHOBJ _ohQ )
 {
   logFuncCall( ) ;
-  int sysRc = 0 ;
+  int sysRc = 0  ;  // system return
+  int locRc = 0  ;  // local return
 
   MQMD  evMsgDscr = {MQMD_DEFAULT};  // message descriptor (set to default)
   MQGMO getMsgOpt = {MQGMO_DEFAULT}; // get message option set to default
@@ -354,7 +355,7 @@ int browseEvents( MQHOBJ _ohQ )
   sysRc = reason;                    //
                                      //
   // -------------------------------------------------------  
-  // init mq for get events
+  // initializing MQ for get events
   // -------------------------------------------------------  
   getMsgOpt.Options     |= MQGMO_BROWSE_FIRST;// browse messages
   getMsgOpt.MatchOptions = MQMO_NONE;         //
@@ -392,11 +393,16 @@ int browseEvents( MQHOBJ _ohQ )
     {                                         //
       case MQRC_NONE :                        //
       {                                       //
-        if( bag2mqiNode( &evMsgDscr, evBag ) < 2 ) 
+        locRc = bag2mqiNode( &evMsgDscr, evBag ) ;
+        if( locRc < 0 ) 
         {
           memcpy( msgId[0], evMsgDscr.MsgId, sizeof(MQBYTE24) );
           memcpy( msgId[1], MQMI_NONE      , sizeof(MQBYTE24) );
           sysRc = moveMessages( msgId, _gohStoreQueue, _gohErrQueue );
+          if( sysRc != 0 )
+          {
+            goto _door;
+          }
         }
         continue;                             //
       }                                       //

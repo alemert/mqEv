@@ -350,7 +350,7 @@ int printQmgrEventTable( const char *dir, tQmgrNode* qmgrNode )
   char *p;
                                                    //  
   snprintf( fileName, NAME_MAX-strlen(EVENT_SFX),  // build a name of the file
-	        "%s/%s", dir, qmgrNode->qmgr  );   // {htmldir}/{qmgr}.event
+	        "%s/%s ", dir, qmgrNode->qmgr  );  // {htmldir}/{qmgr}.event
   p = strchr( fileName, ' ' );                     // find 1st blank
   if( p ) sprintf( p, EVENT_SFX ) ;                // add suffix
                                                    //

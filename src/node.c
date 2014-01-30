@@ -116,6 +116,16 @@ void freeItemList( tMqiItem *_itemNode );
 
 /******************************************************************************/
 /*  mqi bag to mqi node                                                       */
+/*                                                                            */
+/*  return code                                                               */
+/*       0: OK                                                                */
+/*      -3: unknown item type                                                 */
+/*    forward RC from item2event                                              */
+/*       0: OK                                                                */
+/*       1: empty input (MQI-Item empty                                       */
+/*      -1: missing code, message should go to the error queue                */
+/*      -2: missing code, message should go to the error queue                */
+/*                                                                            */
 /******************************************************************************/
 int bag2mqiNode( PMQMD pmd, MQHBAG bag )
 {
@@ -232,6 +242,12 @@ int bag2mqiNode( PMQMD pmd, MQHBAG bag )
                                                          //
         char* itemStr = (char*) malloc( sizeof(char) *   // alloc string memory
                                         itemStrLng+1 );  //
+        if( itemStr == NULL )                            //
+        {                                                //
+          logger( LSTD_MEM_ALLOC_ERROR );                //
+          goto _door;                                    //
+        }                                                //
+                                                         //
         memcpy( itemStr, itemStrBuff, itemStrLng );      // copy to str memory
         itemStr[itemStrLng] = '\0';                      //
                                                          //
@@ -308,6 +324,7 @@ int bag2mqiNode( PMQMD pmd, MQHBAG bag )
   sysRc = item2event( qmgrNode, anchor, pmd );           //
   if( sysRc < 0 )                                        //
   {                                                      //
+    anchor = NULL;      //
     goto _door;                                          //
   }                                                      //
                                                          //
@@ -621,14 +638,23 @@ tEvent* newEventNode()
   tEvent *event; 
 
   event = (tEvent*) malloc( sizeof(tEvent));
-  if( event == NULL )                        //
-  {                                          //
-    logger( LSTD_MEM_ALLOC_ERROR ) ;         //
-    goto _door ;                             //
-  }                                          //
-
-  event->item = NULL;
-  event->next = NULL;
+  if( event == NULL )                          //
+  {                                            //
+    logger( LSTD_MEM_ALLOC_ERROR );            //
+    goto _door;                                //
+  }                                            //
+                                               //
+  event->item = NULL;                          //
+  event->next = NULL;                          //
+                                               //
+  event->pmd = (PMQMD) malloc( sizeof(MQMD) ); //
+  if( event->pmd == NULL )                     //
+  {                                            //
+    free(event);                               //
+    event=NULL;                                //
+    logger( LSTD_MEM_ALLOC_ERROR );            //
+    goto _door;                                //
+  }                                            //
 
   _door: 
   logFuncExit( ) ;
@@ -679,16 +705,17 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
   tMqiItem *nextMqiItem;
   tMqiItem *tmpItem;
 
+  MQLONG eventType = 0 ;     // event type is value to MQIASY_COMMAND selector
+                             //  - MQCMD_Q_MGR_EVENT 
+                             //  - MQCMD_CHANNEL_EVENT
+                             // 
   tEvent   *event  = newEventNode();
   if( event == NULL )                        //
   {                                          //
     goto _door ;                             //
   }                                          //
+  event->item = NULL;
 
-  MQLONG eventType = 0 ;     // event type 
-                             //  - MQCMD_Q_MGR_EVENT 
-                             //  - MQCMD_CHANNEL_EVENT
-              // 
    
   if( anchor == NULL )
   {
@@ -696,10 +723,9 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
     goto _door;  
   }
 
-  event->pmd = (PMQMD) malloc( sizeof(MQMD) );
-  memcpy( event->pmd, pmd, sizeof(MQMD) );
-  mqiItem = anchor->next;
-   
+  memcpy( event->pmd, pmd, sizeof(MQMD) );     // pmd allocated in newEventNode
+  mqiItem = anchor->next;                      //
+  
   while( mqiItem )
   {
     nextMqiItem = mqiItem->next;
@@ -728,21 +754,22 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
       case MQIASY_COMMAND :                // if command MQCMD_Q_MGR_EVENT 
       {                                    // MQIASY_REASON has to be evaluated at 
         eventType = mqiItem->value.intVal; // at later stage in order to assign
-        freeMqiItemValue( mqiItem );       // stop/start qmgr events to a 
-        deleteMqiItem(anchor,mqiItem);     // special list 
+//      freeMqiItemValue( mqiItem );       // stop/start qmgr events to a 
+//      deleteMqiItem(anchor,mqiItem);     // special list 
+        moveMqiItem( mqiItem, anchor, event );
         break;                             //
       }                                    //
       // ---------------------------------------------------
       // items to be moved in event list
       // ---------------------------------------------------
       case MQIASY_REASON    :              // reason code 
+      case MQIACF_REASON_QUALIFIER    :    // reason qualifier
       // ---------------------------------------------------
       // Queue Manager Event
       // ---------------------------------------------------
       case MQIA_APPL_TYPE   :              // application type
       case MQCACF_APPL_NAME :              // application name
       case MQCA_Q_NAME      :              // queue name
-      case MQIACF_REASON_QUALIFIER :       //
       case MQCACF_USER_IDENTIFIER  :       // not authorized (connect)
       case MQIACF_OPEN_OPTIONS     :       // not authorized (open)
       case MQCA_BASE_OBJECT_NAME   :       // dlq reason
@@ -750,21 +777,38 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
       // ---------------------------------------------------
       // Channel events
       // ---------------------------------------------------
-      case MQCACH_CHANNEL_NAME     :       // channel name
-      case MQCACH_XMIT_Q_NAME      :
+      case MQCACH_CHANNEL_NAME        :    // channel name
+      case MQCACH_XMIT_Q_NAME         :    // transmission queue
+      case MQCACH_CONNECTION_NAME     :    // conn name
+      case MQIACF_ERROR_IDENTIFIER    :    // channel error
+      case MQIACF_AUX_ERROR_DATA_INT_1:    // help error information
+      case MQIACF_AUX_ERROR_DATA_INT_2:    // help error information
+      case MQCACF_AUX_ERROR_DATA_STR_1:    // channel name
+      case MQCACF_AUX_ERROR_DATA_STR_2:    // help error information
+      case MQCACF_AUX_ERROR_DATA_STR_3:    // help error information
       {
         moveMqiItem( mqiItem, anchor, event );
         break;
       }
       
-      default : 
-      {
-        logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) mqiItem->selector,
-	                                        __FILE__, __LINE__ );
-	sysRc = -1 ;
-        goto _door ;
-      }
-    }
+      // ---------------------------------------------------
+      // missing selector in switch case list 
+      // ---------------------------------------------------
+      default :                                 // error handling including 
+      {                                         // free of data structure
+        logger( LEVN_MISSING_CODE_FOR_SELECTOR, //
+                       (int) mqiItem->selector, // program will not abort in 
+                       __FILE__,    __LINE__ ); //  case of missing code to some 
+        freeItemList( event->item );            //  selector, it will just log 
+        freeItemList( anchor );                 //  an error message and move MQ
+        anchor = NULL;                          //  message to an error queue
+        free( event->pmd );                     //
+        free( event );                          //
+        event = NULL;                           //
+	sysRc = -1;                             //
+        goto _door;                             //
+      }                                         //
+    }                                           //
              
     mqiItem = nextMqiItem;
   }
@@ -809,16 +853,23 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
       }                                               //
       break;                                          // switch( eventType )
     }                                                 //
+                                  //
     // -----------------------------------------------------
     // channel event
     // -----------------------------------------------------
-    case MQCMD_CHANNEL_EVENT:
-    {
-      qmgrNode->qmgrEvent = event ;
-      break ;
-    }
+    case MQCMD_CHANNEL_EVENT:      //
+    {                        //
+      if( !(qmgrNode->qmgrEvent) )                //
+      {                                               //
+        qmgrNode->qmgrEvent = event;              //
+        break;                                        //
+      }                                               //
+      addEventNode( qmgrNode->qmgrEvent, event ); //
+      break;                                          //
+    }                        //
+                                  //
     // -----------------------------------------------------
-    // not a queue manager event
+    // not a queue manager event or channel event
     // -----------------------------------------------------
     default :                                         //
     {                                                 //
@@ -839,13 +890,15 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
 /*  move mqi item                                                             */
 /*                                                                            */
 /*    description:                                                            */
-/*    items will be moved from the item list (anchor) to event list             */
+/*    items will be moved from the item list (anchor) to event list            */
 /*                                                                            */
 /******************************************************************************/
 
-this function does not work
+// this function does not work
 
-void moveMqiItem( tMqiItem *actNode, tMqiItem *anchor, tEvent *event )
+void moveMqiItem( tMqiItem *actNode,  // item node to be moved
+                  tMqiItem *anchor ,  // anchor of the source list
+                  tEvent   *event  )  // parent (in tree) of the goal list
 {
   logFuncCall( ) ;
   tMqiItem *itemNode = anchor;
@@ -876,15 +929,15 @@ void moveMqiItem( tMqiItem *actNode, tMqiItem *anchor, tEvent *event )
 }
 
 /******************************************************************************/
-/*  get message id pairs                                           */
-/*                                                      */
-/*    description:                                    */
+/*  get message id pairs                                                 */
+/*                                                        */
+/*    description:                                      */
 /*      match close event and open event (f.e. stop/start queue manager or    */
 /*      channel or queue depth high/low water               */
 /*      up to MSGID_PAIR_AMOUNT/2 pairs are possible. This function will be   */
 /*      recalled once more with the next main() cycle if there are more then  */
 /*      MSGID_PAIR_AMOUNT event messages on the queue        */
-/*                  */
+/*                              */
 /******************************************************************************/
 PMQBYTE24 getMsgIdPair()
 {

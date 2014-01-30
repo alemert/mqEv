@@ -191,23 +191,22 @@ int htmlWorker()
     // accept messages
     // -----------------------------------------------------
     do
-    {                                          //
-      sysRc = acceptMessages( movedMsgQmgr );  // wait for messages on the 
-      switch( sysRc )                          //  collect queue and move them 
-      {                                        //  to the store queue
-        case MQRC_NONE :                       //
-        {                                      // if messages found, write flag
-	  break;                               //  directory
+    {                                          // wait for messages on the 
+      sysRc = acceptMessages( movedMsgQmgr );  //  collect queue and move them 
+      switch( sysRc )                          //  to the store queue
+      {                                        //
+        case MQRC_NONE :                       // write time stamp flag file for  
+        {                                      //  each queue manager that 
+          touchEventFlag(wwwDir,movedMsgQmgr); //  produced an event message
+	  break;                               //
 	}                                      //
         case MQRC_NO_MSG_AVAILABLE :           //
 	{                                      //
-          usleep(500);                         // sleep milli seconds for 
+          usleep(5000);                        // sleep milli seconds for 
 	  break;                               //  handling signals
 	}                                      //
         default : goto _door;                  //
-      }                                        // write time stamp flag file for 
-                                               //  each queue manager that 
-      touchEventFlag(wwwDir,movedMsgQmgr);     //  produced an event message
+      }                                        //
     }                                          //
     while( movedMsgQmgr[0][0] == '\0' );       // stay in loop if no 
                                                //  message found

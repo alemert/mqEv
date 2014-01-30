@@ -2,11 +2,6 @@
 <configurationDescriptor version="89">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="mqEv">
-      <df name="html">
-        <df name="cgi">
-          <in>index.cgi</in>
-        </df>
-      </df>
       <df name="include">
         <df name="msgcat">
           <in>lgmqe.h</in>
@@ -16,6 +11,7 @@
         <in>ctl.h</in>
         <in>dumper.h</in>
         <in>inihnd.h</in>
+        <in>level.h</in>
         <in>main.h</in>
         <in>mqbase.h</in>
         <in>mqdump.h</in>
@@ -29,6 +25,7 @@
       </df>
       <df name="src">
         <in>dumper.c</in>
+        <in>level.c</in>
         <in>main.c</in>
         <in>mqev.c</in>
         <in>node.c</in>
@@ -54,9 +51,15 @@
         </df>
         <df name="vers">
           <df name="include">
+            <df name="msgcat">
+              <in>lgmqe.rev</in>
+              <in>lgmqm.rev</in>
+              <in>lgstd.rev</in>
+            </df>
             <in>ctl.rev</in>
             <in>dumper.rev</in>
             <in>inihnd.rev</in>
+            <in>level.rev</in>
             <in>mqbase.rev</in>
             <in>mqdump.rev</in>
             <in>mqev.rev</in>
@@ -69,6 +72,7 @@
           </df>
           <df name="src">
             <in>dumper.rev</in>
+            <in>level.rev</in>
             <in>main.rev</in>
             <in>mqev.rev</in>
             <in>node.rev</in>
@@ -153,13 +157,13 @@
           </incDir>
         </cTool>
       </folder>
-      <item path="html/cgi/index.cgi" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="include/ctl.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/dumper.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/inihnd.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/level.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/main.h" ex="false" tool="3" flavor2="0">
       </item>
@@ -188,6 +192,16 @@
       <item path="include/worker.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="src/dumper.c" ex="false" tool="0" flavor2="0">
+        <cTool>
+          <incDir>
+            <pElem>include</pElem>
+            <pElem>include/msgcat</pElem>
+            <pElem>var/cmdl/src</pElem>
+            <pElem>.</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/level.c" ex="false" tool="0" flavor2="0">
         <cTool>
           <incDir>
             <pElem>include</pElem>
@@ -278,6 +292,8 @@
       </item>
       <item path="var/vers/include/inihnd.rev" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="var/vers/include/level.rev" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="var/vers/include/mqbase.rev" ex="false" tool="3" flavor2="0">
       </item>
       <item path="var/vers/include/mqdump.rev" ex="false" tool="3" flavor2="0">
@@ -288,6 +304,12 @@
       </item>
       <item path="var/vers/include/mqtype.rev" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="var/vers/include/msgcat/lgmqe.rev" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="var/vers/include/msgcat/lgmqm.rev" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="var/vers/include/msgcat/lgstd.rev" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="var/vers/include/node.rev" ex="false" tool="3" flavor2="0">
       </item>
       <item path="var/vers/include/process.rev" ex="false" tool="3" flavor2="0">
@@ -297,6 +319,8 @@
       <item path="var/vers/include/worker.rev" ex="false" tool="3" flavor2="0">
       </item>
       <item path="var/vers/src/dumper.rev" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="var/vers/src/level.rev" ex="false" tool="3" flavor2="0">
       </item>
       <item path="var/vers/src/main.rev" ex="false" tool="3" flavor2="0">
       </item>
