@@ -62,6 +62,7 @@
 // ---------------------------------------------------------
 #define _MQEV_NODE_C_MODULE_
 
+#include <level.h>
 #include <node.h>
 
 /******************************************************************************/
@@ -353,7 +354,8 @@ tMqiItem* newMqiItem( )
 
   item->selector     = 0 ;
   item->value.strVal =  NULL ;
-  item->type         = UNKNOWN_ITEM ;
+  item->type         = UNKNOWN_ITEM;
+  item->level        = MQEV_LEV_NA ;
   item->next         = NULL;
 
   _door:
@@ -700,9 +702,10 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
   logFuncCall( ) ;
  
   int sysRc = 0;
+  tEvLevel level ;
 
   tMqiItem *mqiItem;
-  tMqiItem *nextMqiItem;
+//tMqiItem *nextMqiItem;
   tMqiItem *tmpItem;
 
   MQLONG eventType = 0 ;     // event type is value to MQIASY_COMMAND selector
@@ -723,12 +726,72 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
     goto _door;  
   }
 
-  memcpy( event->pmd, pmd, sizeof(MQMD) );     // pmd allocated in newEventNode
+  memcpy( event->pmd, pmd, sizeof(MQMD) );     // MQMD allocated in newEventNode
   mqiItem = anchor->next;                      //
   
   while( mqiItem )
   {
-    nextMqiItem = mqiItem->next;
+//  nextMqiItem = mqiItem->next;
+#if(1)
+    if( mqiItem->selector == MQIASY_COMMAND )  // if command MQCMD_Q_MGR_EVENT 
+    {                                          // MQIASY_REASON has to be evaluated at 
+      eventType = mqiItem->value.intVal;       // at later stage in order to assign
+    }                                          // stop/start qmgr events to a 
+                                               //
+    level = getSelectorLevel( mqiItem->selector );
+    switch( level )      //
+    {            //
+      // ---------------------------------------------------
+      // evaluate level depending on the item value
+      // ---------------------------------------------------
+      case MQEV_LEV_EVAL:                      //
+      {                                        //
+        break;                                 //
+      }                                        //
+                                               //
+      // ---------------------------------------------------
+      // ignore this item, 
+      // ---------------------------------------------------
+      case MQEV_LEV_IGN:                       // remove item from the list, 
+      {                                        //  do not show this information in monitoring
+        freeMqiItemValue( mqiItem );           // free item value for strings
+        deleteMqiItem(anchor,mqiItem);         // delete and free item
+        break;                                 //
+      }                                        //
+                                               //
+      // ---------------------------------------------------
+      // show following items in monitoring 
+      // ---------------------------------------------------
+      case MQEV_LEV_INF:                       // information ( green )
+      case MQEV_LEV_WAR:                       // warning  ( yellow )
+      case MQEV_LEV_ERR:                       // error    ( red )
+      {                                        //
+        mqiItem->level = level;                //
+        moveMqiItem( mqiItem, anchor, event ); //
+        break;                                 //
+      }                                        //
+                                               //
+      // ---------------------------------------------------
+      // level not available, unknown level
+      // ---------------------------------------------------
+      case MQEV_LEV_NA:                        // return sysRc = -1
+      default         :                        //  message should be moved to 
+      {                                        //  an error queue
+        logger(LEVN_MISSING_CODE_FOR_SELECTOR, //
+                      (int) mqiItem->selector, // program will not abort in 
+                      __FILE__,    __LINE__ ); //  case of missing code to some 
+        freeItemList( event->item );           //  selector, it will just log 
+        freeItemList( anchor );                //  an error message and move MQ
+        anchor = NULL;                         //  message to an error queue
+        free( event->pmd );                    //
+        free( event );                         //
+        event = NULL;                          //
+        sysRc = -1;                            //
+        goto _door;                            //
+        break;                                 //
+      }      /* default */                     //
+    }        /* switch  */                     //
+#else
     switch ( mqiItem->selector )
     {
       // ---------------------------------------------------
@@ -744,7 +807,7 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
       {
         freeMqiItemValue( mqiItem );       // free item value for strings
         deleteMqiItem(anchor,mqiItem);     // delete and free item
-	break;
+        break;
       }
       
       // ---------------------------------------------------
@@ -809,8 +872,10 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
         goto _door;                             //
       }                                         //
     }                                           //
-             
     mqiItem = nextMqiItem;
+#endif
+             
+    mqiItem = mqiItem->next ;
   }
   
   // -------------------------------------------------------
