@@ -37,6 +37,9 @@
                                            
   extern MQOD    _godStoreQueue;
   extern MQHOBJ  _gohStoreQueue;
+                                           
+  extern MQOD    _godErrQueue;
+  extern MQHOBJ  _gohErrQueue;
 #endif
 
 /******************************************************************************/
@@ -48,7 +51,7 @@
 /******************************************************************************/
 int initMq( );
 void endMq( );
-int browseEvents( MQHOBJ _ohQ );
+int browseEvents( MQHOBJ _ohQ, MQHOBJ _ohErrQ );
 void printEventList();
 int handleDoneEvents();
 void msgIdStr2MQbyte( char* str, PMQBYTE24 msgid );

@@ -547,10 +547,11 @@ void touchAckFlag( char* dir, char *qmgrName )
 }
 
 /******************************************************************************/
-/*   flush old events from existing files                  */
-/*                        */
-/*   description:           */
-/*     flash all files on $wwwDir (i.g. /var/mq_misc/www)  */
+/*   flush old events from existing files                                     */
+/*                                                                            */
+/*   description:                                                             */
+/*     flush all files on $wwwDir (i.g. /var/mq_misc/www) having              */
+/*     suffix .event (matching /var/mq_misc/www/\*.event                      */
 /******************************************************************************/
 int flushEventFiles( char* wwwDir )
 {

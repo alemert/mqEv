@@ -121,16 +121,21 @@ void freeItemList( tMqiItem *_itemNode );
 /******************************************************************************/
 
 /******************************************************************************/
-/*  mqi bag to mqi node                                                       */
+/*   mqi bag to mqi node                                                      */
 /*                                                                            */
-/*  return code                                                               */
-/*       0: OK                                                                */
-/*      -3: unknown item type                                                 */
-/*    forward RC from item2event                                              */
-/*       0: OK                                                                */
-/*       1: empty input (MQI-Item empty                                       */
-/*      -1: missing code, message should go to the error queue                */
-/*      -2: missing code, message should go to the error queue                */
+/*   description:                                                             */
+/*     - analyze mq bag respecting Item Type                                  */
+/*     - add item to the event list of items                                  */
+/*     - add event list of items to the queue manager event list              */
+/*                                                                            */
+/*   return code                                                              */
+/*        0: OK                                                               */
+/*       -3: unknown item type                                                */
+/*     forward RC from item2event                                             */
+/*        0: OK                                                               */
+/*        1: empty input (MQI-Item empty                                      */
+/*       -1: missing code, message should go to the error queue               */
+/*       -2: missing code, message should go to the error queue               */
 /*                                                                            */
 /******************************************************************************/
 int bag2mqiNode( PMQMD pmd, MQHBAG bag )
@@ -181,6 +186,7 @@ int bag2mqiNode( PMQMD pmd, MQHBAG bag )
                                                          //
   // -------------------------------------------------------
   // go through all items
+  // copy item to the event list of items
   // -------------------------------------------------------
                                                          //
   for( i=0; i<itemCount; i++ )                           //
@@ -189,151 +195,162 @@ int bag2mqiNode( PMQMD pmd, MQHBAG bag )
     // -----------------------------------------------------
     // get item type
     // -----------------------------------------------------
-    mqInquireItemInfo( bag               ,               // get selector(id)
-                       MQSEL_ANY_SELECTOR,               //  and item type
-                       i                 ,               //
-                       &selector         ,               //
-                       &itemType         ,               //
-                       &compCode         ,               //
-                       &reason          );               //
-                                                         //
-    switch( reason )                                     //
-    {                                                    //
-      case MQRC_NONE : break;                            //
-      default :                                          //
-      {                                                  //
-        logMQCall( DBG, "mqCountItems", reason );        //
-        goto _door;                                      //
-      }                                                  //
-    }                                                    //
-    logger( LMQM_ITEM_TYPE, mqItemType2str(itemType) );  //
-                                                         //
+    mqInquireItemInfo( bag               ,             // get selector(id)
+                       MQSEL_ANY_SELECTOR,             //  and item type
+                       i                 ,             //
+                       &selector         ,             //
+                       &itemType         ,             //
+                       &compCode         ,             //
+                       &reason          );             //
+                                                       //
+    switch( reason )                                   //
+    {                                                  //
+      case MQRC_NONE : break;                          //
+      default :                                        //
+      {                                                //
+        logMQCall( DBG, "mqCountItems", reason );      //
+        goto _door;                                    //
+      }                                                //
+    }                                                  //
+    logger( LMQM_ITEM_TYPE, mqItemType2str(itemType)); //
+                                                       //
     // -----------------------------------------------------
     // analyse the item type
     // -----------------------------------------------------
-    switch( itemType )                                   //
-    {                                                    //
+    switch( itemType )                                 //
+    {                                                  //
       // ---------------------------------------------------
       //  handle INTIGER item
       // ---------------------------------------------------
-      case MQITEM_INTEGER :                              //
-      {                                                  //
-        mqInquireInteger( bag               ,            //
-                          MQSEL_ANY_SELECTOR,            //
-                          i                 ,            //
-                          &iVal             ,            //
-                          &compCode         ,            //
-                          &reason          );            //
-                                                         //
-        setMqiItem( addMqiItem( anchor )  ,              //
-                      selector            ,              //
-                      INTIGER_ITEM        ,              //
-                      (tMqiItemVal)(int)iVal );          //
-        break;                                           //
-      }                                                  //
+      case MQITEM_INTEGER :                            //
+      {                                                //
+        mqInquireInteger( bag               ,          //
+                          MQSEL_ANY_SELECTOR,          //
+                          i                 ,          //
+                          &iVal             ,          //
+                          &compCode         ,          //
+                          &reason          );          //
+                                                       //
+        setMqiItem( addMqiItem( anchor )  ,            //
+                      selector            ,            //
+                      INTIGER_ITEM        ,            //
+                      (tMqiItemVal)(int)iVal );        //
+        break;                                         //
+      }                                                //
       // ---------------------------------------------------
       //  handle STRING item
       // ---------------------------------------------------
-      case MQITEM_STRING :                               //
-      {                                                  //
-        mqInquireString( bag               ,             //
-                         MQSEL_ANY_SELECTOR,             //
-                         i                 ,             //
-                         ITEM_STRING_LENGTH,             //
-                         itemStrBuff       ,             //
-                         &itemStrLng       ,             //
-                         &iCCSID           ,             //
-                         &compCode         ,             //
-                         &reason          );             //
-                                                         //
-        char* itemStr = (char*) malloc( sizeof(char) *   // alloc string memory
-                                        itemStrLng+1 );  //
-        if( itemStr == NULL )                            //
-        {                                                //
-          logger( LSTD_MEM_ALLOC_ERROR );                //
-          goto _door;                                    //
-        }                                                //
-                                                         //
-        memcpy( itemStr, itemStrBuff, itemStrLng );      // copy to str memory
-        itemStr[itemStrLng] = '\0';                      //
-                                                         //
-        setMqiItem( addMqiItem( anchor ),                // add a new item
-                      selector          ,                //  with bag value
-                      STRING_ITEM       ,                //
-                      (tMqiItemVal)(char*) itemStr );    //
-        break;                                           //
-      }                                                  //
-      case MQITEM_BAG :                                  //
-      {                                                  //
+      case MQITEM_STRING :                             //
+      {                                                //
+        mqInquireString( bag               ,           //
+                         MQSEL_ANY_SELECTOR,           //
+                         i                 ,           //
+                         ITEM_STRING_LENGTH,           //
+                         itemStrBuff       ,           //
+                         &itemStrLng       ,           //
+                         &iCCSID           ,           //
+                         &compCode         ,           //
+                         &reason          );           //
+                                                       //
+        char* itemStr = (char*) malloc( sizeof(char) * // alloc string memory
+                                        itemStrLng+1 );//
+        if( itemStr == NULL )                          //
+        {                                              //
+          logger( LSTD_MEM_ALLOC_ERROR );              //
+          goto _door;                                  //
+        }                                              //
+                                                       //
+        memcpy( itemStr, itemStrBuff, itemStrLng );    // copy to str memory
+        itemStr[itemStrLng] = '\0';                    //
+                                                       //
+        setMqiItem( addMqiItem( anchor ),              // add a new item
+                      selector          ,              //  with bag value
+                      STRING_ITEM       ,              //
+                      (tMqiItemVal)(char*) itemStr );  //
+        break;                                         //
+      }                                                //
+      case MQITEM_BAG :                                //
+      {                                                //
       logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) itemType,
                                               __FILE__, __LINE__ );
-        sysRc = -3;                                      //
-        goto _door;                                      //
-      }                                                  //
-      case MQITEM_BYTE_STRING :                          //
-      {                                                  //
+        sysRc = -3;                                    //
+        goto _door;                                    //
+      }                                                //
+      case MQITEM_BYTE_STRING :                        //
+      {                                                //
       logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) itemType,
                                               __FILE__, __LINE__ );
-        sysRc = -3;                                      //
-        goto _door;                                      //
-      }                                                  //
-      case MQITEM_INTEGER_FILTER :                       //
-      {                                                  //
+        sysRc = -3;                                    //
+        goto _door;                                    //
+      }                                                //
+      case MQITEM_INTEGER_FILTER :                     //
+      {                                                //
       logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) itemType,
                                               __FILE__, __LINE__ );
-        sysRc = -3;                                      //
-        goto _door;                                      //
-      }                                                  //
-      case MQITEM_STRING_FILTER :                        //
-      {                                                  //
+        sysRc = -3;                                    //
+        goto _door;                                    //
+      }                                                //
+      case MQITEM_STRING_FILTER :                      //
+      {                                                //
       logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) itemType,
                                               __FILE__, __LINE__ );
-        sysRc = -3;                                      //
-        goto _door;                                      //
-      }                                                  //
-      case MQITEM_INTEGER64 :                            //
-      {                                                  //
+        sysRc = -3;                                    //
+        goto _door;                                    //
+      }                                                //
+      case MQITEM_INTEGER64 :                          //
+      {                                                //
       logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) itemType,
                                               __FILE__, __LINE__ );
-        sysRc = -3;                                      //
-        goto _door;                                      //
-      }                                                  //
-      case MQITEM_BYTE_STRING_FILTER :                   //
-      {                                                  //
+        sysRc = -3;                                    //
+        goto _door;                                    //
+      }                                                //
+      case MQITEM_BYTE_STRING_FILTER :                 //
+      {                                                //
       logger( LEVN_MISSING_CODE_FOR_SELECTOR, (int) itemType,
                                               __FILE__, __LINE__ );
-        sysRc = -3;                                      //
-        goto _door;                                      //
-      }                                                  //
-    }                                                    //
-                                                         //
-    switch( reason )                                     //
-    {                                                    //
-      case MQRC_NONE : break;                            //
-      default :                                          //
-      {                                                  //
-        logMQCall( DBG, "mqInquire???", reason );        //
-        goto _door;                                      //
-      }                                                  //
-    }                                                    //
-  }                                                      //
-                                                         //
-  qmgrItem = findMqiItem( anchor, MQCA_Q_MGR_NAME );     //
-  if( qmgrItem == NULL )                                 //
-  {                                                      //
-    goto _door;                                          //
-  }                                                      //
-  qmgrNode = addQmgrNode( qmgrItem->value.strVal );      //
-  freeMqiItemValue( qmgrItem );                          //
-  deleteMqiItem( anchor, qmgrItem );                     //
-                                                         //
-  sysRc = item2event( qmgrNode, anchor, pmd );           //
-  if( sysRc < 0 )                                        //
-  {                                                      //
-    anchor = NULL;      //
-    goto _door;                                          //
-  }                                                      //
-                                                         //
+        sysRc = -3;                                    //
+        goto _door;                                    //
+      }                                                //
+    }                                                  //
+                                                       //
+    switch( reason )                                   //
+    {                                                  //
+      case MQRC_NONE : break;                          //
+      default :                                        //
+      {                                                //
+        logMQCall( DBG, "mqInquire???", reason );      //
+        goto _door;                                    //
+      }                                                //
+    }                                                  //
+  }                                                    //
+                                                       //
+  // -------------------------------------------------------
+  // attach event list of items to the corresponding Queue Manager
+  // -------------------------------------------------------
+  qmgrItem = findMqiItem( anchor, MQCA_Q_MGR_NAME );   // find an item with 
+  if( qmgrItem == NULL )                               //  queue manager name
+  {                                                    //
+    goto _door;                                        //
+  }                                                    // attach event list of 
+                                                       // items to the queue 
+  qmgrNode = addQmgrNode( qmgrItem->value.strVal );    // manager node
+                                                       //
+  // -------------------------------------------------------
+  // throw away item with queue manager name,  since name is already in the 
+  // ---------------------------------------------------- header of the queue
+  freeMqiItemValue( qmgrItem );                        // manager node 
+  deleteMqiItem( anchor, qmgrItem );                   // 
+                                                       //
+  // -------------------------------------------------------
+  // convert list of items to event list
+  // -------------------------------------------------------
+  sysRc = item2event( qmgrNode, anchor, pmd );         //
+  if( sysRc < 0 )                                      //
+  {                                                    //
+    anchor = NULL;                                     //
+    goto _door;                                        //
+  }                                                    //
+                                                       //
   _door:
 	
   if(anchor) free(anchor);
@@ -719,29 +736,28 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
                              //  - MQCMD_CHANNEL_EVENT
                              // 
   tEvent   *event  = newEventNode();
-  if( event == NULL )                        //
-  {                                          //
-    goto _door ;                             //
-  }                                          //
-  event->item = NULL;
-
-   
-  if( anchor == NULL )
-  {
-    sysRc = 1;
-    goto _door;  
-  }
-
-  memcpy( event->pmd, pmd, sizeof(MQMD) );     // MQMD allocated in newEventNode
-  mqiItem = anchor->next;                      //
-
+  if( event == NULL )        //
+  {                          //
+    goto _door ;             //
+  }                          //
+  event->item = NULL;        //
+                             //
+  if( anchor == NULL )       //
+  {                          //
+    sysRc = 1;               //
+    goto _door;              //
+  }                          //
+                             //
+  memcpy( event->pmd, pmd, sizeof(MQMD) );     // MQMD has been allocated 
+  mqiItem = anchor->next;                      //  in newEventNode
+                                               //
   // -------------------------------------------------------
   // go through all items, move them to event list, set the level
   // -------------------------------------------------------
   while( mqiItem )                             //
   {                                            //
 #if(1)                                         //
-    nextMqiItem = mqiItem->next ;
+    nextMqiItem = mqiItem->next;               //
 
     if( mqiItem->selector == MQIASY_COMMAND )  // find out to which list this
     {                                          //  item should be moved to
@@ -764,10 +780,10 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
     switch( level )                            //
     {                                          //
       // ---------------------------------------------------
-      // ignore this item, 
-      // ---------------------------------------------------
-      case MQEV_LEV_IGN:                       // remove item from the list, 
-      {                                        //  do not show this information in monitoring
+      // ignore this item,  remove item from the list, do not show this 
+      // ---------------------------------------- information in the monitoring, 
+      case MQEV_LEV_IGN:                       //
+      {                                        //
         freeMqiItemValue( mqiItem );           // free item value for strings
         deleteMqiItem(anchor,mqiItem);         // delete and free item
         break;                                 //
@@ -798,13 +814,13 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
       {                                        //  an error queue
         logger(LEVN_MISSING_CODE_FOR_SELECTOR, //
                       (int) mqiItem->selector, // program will not abort in 
-                      __FILE__,    __LINE__ ); //  case of missing code to some 
+                      __FILE__,    __LINE__ ); //  case of missing code for some 
         freeItemList( event->item );           //  selector, it will just log 
-        freeItemList( anchor );                //  an error message and move MQ
-        anchor = NULL;                         //  message to an error queue
-        free( event->pmd );                    //
-        free( event );                         //
-        event = NULL;                          //
+        freeItemList( anchor );                //  an error message to an error 
+        anchor = NULL;                         //  log and move MQ event message
+        free( event->pmd );                    //  to an error queue
+        free( event );                         //  (f.e in browseEvents 2 level
+        event = NULL;                          //    higher in call stack)
         sysRc = -1;                            //
         goto _door;                            //
         break;                                 //
@@ -1180,7 +1196,7 @@ MQLONG matchEventReason( MQLONG reason )
 /*                                                                            */
 /*    description:                                                            */
 /*                                                                            */
-/*      free complete even tree, do not free the list of the queue manager    */
+/*      free complete event tree, do not free the list of the queue manager   */
 /******************************************************************************/
 void freeEventTree()
 {

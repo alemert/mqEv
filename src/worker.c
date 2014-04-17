@@ -97,7 +97,7 @@ int consoleWorker()
   // -------------------------------------------------------
   // browse messages in input queue
   // -------------------------------------------------------
-  browseEvents( _gohStoreQueue );
+  browseEvents( _gohStoreQueue, _gohErrQueue );
 
   handleDoneEvents();
 
@@ -155,7 +155,8 @@ int htmlWorker()
     // -----------------------------------------------------
     // browse messages in the store queue
     // -----------------------------------------------------
-    sysRc = browseEvents( _gohStoreQueue );    // browse events 
+    sysRc = browseEvents( _gohStoreQueue,      // browse events and move 
+                          _gohErrQueue );      //  unknown events to error queue
     if( sysRc != 0 )                           //
     {                                          //
       goto _door;                              //
@@ -171,7 +172,8 @@ int htmlWorker()
     }                                          //
     else if( sysRc < 0 )                       // handleDoneEvents moved some 
     {                                          //  events, therefor the collect 
-      sysRc = browseEvents( _gohStoreQueue );  //  queue has to be re-read
+      sysRc = browseEvents( _gohStoreQueue,    //
+                            _gohErrQueue );    //  queue has to be re-read
       if( sysRc != 0 )                         //
       {                                        //
         goto _door;                            //
@@ -251,7 +253,8 @@ int ackWorker( )
   // -------------------------------------------------------  
   // browse all events
   // -------------------------------------------------------  
-  sysRc = browseEvents( _gohStoreQueue );   // read all events
+  sysRc = browseEvents( _gohStoreQueue,     // read all events
+                        _gohErrQueue );     //
   if( sysRc != 0 )                          //
   {                                         // free the event tree, all queue 
     goto _door;                             // manager are still in the event tree.
@@ -271,7 +274,8 @@ int ackWorker( )
   // -------------------------------------------------------  
   // browse rest messages 
   // -------------------------------------------------------  
-  sysRc = browseEvents( _gohStoreQueue );   //
+  sysRc = browseEvents( _gohStoreQueue,     //
+                        _gohErrQueue );     //
   if( sysRc != 0 )                          //
   {                                         //
     goto _door;                             //

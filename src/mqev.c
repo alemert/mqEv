@@ -332,13 +332,22 @@ void endMq()
 }
 
 /******************************************************************************/
-/* browse events                                                              */
+/*  browse events                                                             */
+/*                                                                            */
+/*  description:                                                              */
+/*    - browse events from queue i.g storeQueue = ADMIN.STORE.EVENT           */  
+/*    - after browsing the events will be stored in the event list (memory)   */
+/*    - if event can not be converted in to memory, the MQ Event message will */
+/*       be moved to the errorQueue = ADMIN.ERROR.EVENT                       */
+/*       reason for moving a message is a "non-event Message in the event     */
+/*       queue or unknown event                                               */
+/*                                                                            */
 /******************************************************************************/
-int browseEvents( MQHOBJ _ohQ )
+int browseEvents( MQHOBJ _ohQ, MQHOBJ _ohErrQ )
 {
   logFuncCall( ) ;
-  int sysRc = 0  ;  // system return
-  int locRc = 0  ;  // local return
+  int sysRc = 0  ;  // system return for return code out of browseEvents
+  int locRc = 0  ;  // local return for called functions
 
   MQMD  evMsgDscr = {MQMD_DEFAULT};  // message descriptor (set to default)
   MQGMO getMsgOpt = {MQGMO_DEFAULT}; // get message option set to default
@@ -347,8 +356,8 @@ int browseEvents( MQHOBJ _ohQ )
                                      //
 //MQLONG  compCode;                  //
   MQLONG  reason  = MQRC_NONE;       //
-            //
-  MQBYTE24 msgId[2];      //
+                                     //
+  MQBYTE24 msgId[2];                 //
                                      //
   int firstBrowse = 1 ;              //
                                      //
@@ -380,7 +389,7 @@ int browseEvents( MQHOBJ _ohQ )
                         _ohQ       ,          // globale (queue) open handle
                         &evMsgDscr ,          // message descriptor
                         &getMsgOpt ,          // get message options
-                         evBag    );          // bag
+                        evBag     );          // bag
                                               //
     if( firstBrowse )                         //
     {                                         //
@@ -398,7 +407,7 @@ int browseEvents( MQHOBJ _ohQ )
         {
           memcpy( msgId[0], evMsgDscr.MsgId, sizeof(MQBYTE24) );
           memcpy( msgId[1], MQMI_NONE      , sizeof(MQBYTE24) );
-          sysRc = moveMessages( msgId, _gohStoreQueue, _gohErrQueue );
+          sysRc = moveMessages( msgId, _ohQ, _ohErrQ );
           if( sysRc != 0 )
           {
             goto _door;
