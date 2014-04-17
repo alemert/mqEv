@@ -46,6 +46,8 @@ typedef struct sMqiItem     tMqiItem    ;
 typedef union  uMqiItemVal  tMqiItemVal ;
 typedef enum   eMqiItemType tMqiItemType;
 
+typedef enum eEvLevel tEvLevel;
+
 union uMqiItemVal
 {
   char *strVal;
@@ -57,6 +59,17 @@ enum eMqiItemType
   UNKNOWN_ITEM,
   INTIGER_ITEM,
   STRING_ITEM 
+};
+
+enum eEvLevel 
+{
+  MQEV_LEV_EVAL = 0,   // evaluate the level depending on item value
+  MQEV_LEV_IGN  = 1,   // ignore( do not show the message)
+  MQEV_LEV_INF  = 2,   // information ( green )
+  MQEV_LEV_WAR  = 3,   // warning  ( yellow )
+  MQEV_LEV_ERR  = 4,   // error    ( red )
+  MQEV_LEV_NA   = 5    // level not available move message to an error 
+                       //  queue, log error to a log file
 };
 
 struct sMqiItem
@@ -103,6 +116,10 @@ struct sEvent
 /******************************************************************************/
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
+
+// ---------------------------------------------------------
+// node.c
+// ---------------------------------------------------------
 int bag2mqiNode( PMQMD md, MQHBAG bag );
 PMQBYTE24 getMsgIdPair();
 
@@ -114,4 +131,12 @@ void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem );
 void freeEventTree();
 
 // char* findEmtpyQueueManager() ;
+
+// ---------------------------------------------------------
+// level.c
+// ---------------------------------------------------------
+tEvLevel getSelectorLevel( MQLONG selector );
+tEvLevel getValueLevel(    MQLONG value    );
+tEvLevel evalEventLevel(   tEvent *_event  );
+
 #endif

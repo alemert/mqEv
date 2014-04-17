@@ -1,3 +1,4 @@
+#if(0)
 /******************************************************************************/
 /*                              M Q   E V E N T                               */
 /*                                                                            */
@@ -62,3 +63,4 @@ tEvLevel evalEventLevel(   tEvent *_event  );
 
 
 #endif    // !_MQ_EV_LEVEL_H
+#endif

@@ -67,7 +67,7 @@
 // ---------------------------------------------------------
 #define _MQEV_NODE_C_MODULE_
 
-#include <level.h>
+//#include <level.h>
 #include <node.h>
 
 /******************************************************************************/
@@ -709,7 +709,6 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
  
   int sysRc = 0;
   tEvLevel level    ;
-  tEvLevel maxLevel ;
 
   tMqiItem *mqiItem;
   tMqiItem *nextMqiItem;
