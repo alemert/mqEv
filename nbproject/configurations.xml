@@ -2,6 +2,11 @@
 <configurationDescriptor version="89">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="mqEv">
+      <df name="etc">
+        <df name="ini">
+          <in>event.test</in>
+        </df>
+      </df>
       <df name="include">
         <df name="msgcat">
           <in>lgmqe.h</in>
@@ -125,6 +130,8 @@
           </makeArtifact>
         </requiredProjects>
       </makefileType>
+      <item path="etc/ini/event.test" ex="false" tool="3" flavor2="0">
+      </item>
       <folder path="mqEv/test">
         <cTool>
           <incDir>

@@ -47,11 +47,13 @@ foreach my $attr ( keys %$_attr )
 #   M A I N  
 ################################################################################
 
+my $ackCall ;
 if( exists $_attr->{msgid} )
 {
 #  $ENV{LD_LIBRARY_PATH}=$ENV{LD_LIBRARY_PATH}.':'."/home/mertale/NetBeansProjects/mqEv/lib/gcc/64/Linux.x86_64/" ;
-# system( "/home/mertale/NetBeansProjects/mqEv/bin/gcc/64/Linux.x86_64/mqev --ack $_attr->{msgid} --ini  /home/mertale/NetBeansProjects/mqEv/etc/ini/mqev.apache.ini") ;
-  system( "/opt/dbag/mqev --ack $_attr->{msgid} --ini  /home/mertale/NetBeansProjects/mqEv/etc/ini/mqev.apache.ini") ;
+  system( "/home/mertale/NetBeansProjects/mqEv/bin/gcc/64/Linux.x86_64/mqev --ack $_attr->{msgid} --ini  /home/mertale/NetBeansProjects/mqEv/etc/ini/mqev.apache.ini") ;
+  $ackCall = "/home/mertale/NetBeansProjects/mqEv/bin/gcc/64/Linux.x86_64/mqev --ack $_attr->{msgid} --ini  /home/mertale/NetBeansProjects/mqEv/etc/ini/mqev.apache.ini";
+# system( "/opt/dbag/mqev --ack $_attr->{msgid} --ini  /home/mertale/NetBeansProjects/mqEv/etc/ini/mqev.apache.ini") ;
   delete $_attr->{msgid} ;
   if( exists $_attr->{qmgr} )
   {
@@ -73,4 +75,5 @@ exists $_attr->{cmd} &&
 
 closeHeader ;
 
-# print $cmdlnAttr ;
+#print $cmdlnAttr ;
+#print "<br> <br> br> <br> <br> <br> br> <br> <br> <br> br> <br> <br> <br> br> <br> <br> <br> br> <br> $ackCall\n" ;

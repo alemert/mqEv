@@ -575,7 +575,7 @@ int moveMessages( PMQBYTE24 _msgIdArray, MQHOBJ _getoh, MQHOBJ _putoh )
     // write the same message to done queue
     // -----------------------------------------------------  
     pmo.Options=MQPMO_FAIL_IF_QUIESCING + //
-	        MQPMO_NO_CONTEXT        + //
+	 //     MQPMO_NO_CONTEXT        + //
                 MQPMO_SYNCPOINT         ; //
     reason = mqPut( _ghConn     ,         // connection handle
                     _putoh      ,         // pointer to queue handle

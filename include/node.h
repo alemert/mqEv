@@ -2,6 +2,8 @@
 /* change title on for new project                                            */
 /******************************************************************************/
 
+#ifndef  _MQ_EV_NODE_H
+#define _MQ_EV_NODE_H
 /******************************************************************************/
 /*   I N C L U D E S                                                          */
 /******************************************************************************/
@@ -85,6 +87,7 @@ struct sEvent
 {
   tMqiItem *item;
   PMQMD     pmd ;
+  tEvLevel level;
   tEvent   *next;
 };
 
@@ -111,3 +114,4 @@ void deleteMqiItem( tMqiItem* anchor, tMqiItem* deleteItem );
 void freeEventTree();
 
 // char* findEmtpyQueueManager() ;
+#endif

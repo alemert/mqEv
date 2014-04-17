@@ -7,7 +7,7 @@
 /******************************************************************************/
 
 #ifndef  _MQ_EV_LEVEL_H
-#define _MQ_EV_LEVEL_H
+#define  _MQ_EV_LEVEL_H
 /******************************************************************************/
 /*   I N C L U D E S                                                          */
 /******************************************************************************/
@@ -19,18 +19,13 @@
 // own 
 // ---------------------------------------------------------
 
+// ---------------------------------------------------------
+// local
+// ---------------------------------------------------------
+
 /******************************************************************************/
 /*   D E F I N E S                                                            */
 /******************************************************************************/
-#if(0)
-#define MQEV_LEV_EVAL   0      // evaluate the level depending on item value
-#define MQEV_LEV_IGN    1      // ignore( do not show the message)
-#define MQEV_LEV_INF    2      // information ( green )
-#define MQEV_LEV_WAR    3      // warning  ( yellow )
-#define MQEV_LEV_ERR    4      // error    ( red )
-#define MQEV_LEV_NA     5      // level not available move message to an error 
-                               //  queue, log error to a log file
-#endif
 
 /******************************************************************************/
 /*   G L O B A L E S                                                          */
@@ -56,10 +51,14 @@ enum eEvLevel
                        //  queue, log error to a log file
 };
 
+#include <node.h>
 /******************************************************************************/
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
-int getSelectorLevel( MQLONG selector );
+tEvLevel getSelectorLevel( MQLONG selector );
+tEvLevel getValueLevel(    MQLONG value    );
+tEvLevel evalEventLevel(   tEvent *_event  );
+
 
 
 #endif    // !_MQ_EV_LEVEL_H

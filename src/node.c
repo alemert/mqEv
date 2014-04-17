@@ -58,6 +58,11 @@
 #include <mqbase.h>
 
 // ---------------------------------------------------------
+// own
+// ---------------------------------------------------------
+#include <mqtype.h>
+
+// ---------------------------------------------------------
 // local
 // ---------------------------------------------------------
 #define _MQEV_NODE_C_MODULE_
@@ -646,8 +651,9 @@ tEvent* newEventNode()
     goto _door;                                //
   }                                            //
                                                //
-  event->item = NULL;                          //
-  event->next = NULL;                          //
+  event->item  = NULL;                          //
+  event->next  = NULL;                          //
+  event->level = MQEV_LEV_NA;
                                                //
   event->pmd = (PMQMD) malloc( sizeof(MQMD) ); //
   if( event->pmd == NULL )                     //
@@ -702,10 +708,11 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
   logFuncCall( ) ;
  
   int sysRc = 0;
-  tEvLevel level ;
+  tEvLevel level    ;
+  tEvLevel maxLevel ;
 
   tMqiItem *mqiItem;
-//tMqiItem *nextMqiItem;
+  tMqiItem *nextMqiItem;
   tMqiItem *tmpItem;
 
   MQLONG eventType = 0 ;     // event type is value to MQIASY_COMMAND selector
@@ -728,27 +735,35 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
 
   memcpy( event->pmd, pmd, sizeof(MQMD) );     // MQMD allocated in newEventNode
   mqiItem = anchor->next;                      //
-  
-  while( mqiItem )
-  {
-//  nextMqiItem = mqiItem->next;
-#if(1)
-    if( mqiItem->selector == MQIASY_COMMAND )  // if command MQCMD_Q_MGR_EVENT 
-    {                                          // MQIASY_REASON has to be evaluated at 
-      eventType = mqiItem->value.intVal;       // at later stage in order to assign
-    }                                          // stop/start qmgr events to a 
-                                               //
-    level = getSelectorLevel( mqiItem->selector );
-    switch( level )      //
-    {            //
-      // ---------------------------------------------------
-      // evaluate level depending on the item value
-      // ---------------------------------------------------
-      case MQEV_LEV_EVAL:                      //
-      {                                        //
-        break;                                 //
+
+  // -------------------------------------------------------
+  // go through all items, move them to event list, set the level
+  // -------------------------------------------------------
+  while( mqiItem )                             //
+  {                                            //
+#if(1)                                         //
+    nextMqiItem = mqiItem->next ;
+
+    if( mqiItem->selector == MQIASY_COMMAND )  // find out to which list this
+    {                                          //  item should be moved to
+      eventType = mqiItem->value.intVal;       //
+    }                                          //
+                                               // get level to selector
+    level=getSelectorLevel(mqiItem->selector); // level of some selectors 
+    if( level == MQEV_LEV_EVAL )               //  depend on it's value
+    {                                          //
+      if( mqiItem->type != INTIGER_ITEM )      // converting is possible only 
+      {                                        //  for integer items
+	logger( LEVN_EVENT_ITEM_TYPE_ERROR,    //
+	        mqSelector2str(mqiItem->selector));
+        sysRc = -2;                            //
+	goto _door;                            //
       }                                        //
+      level = getValueLevel( mqiItem->value.intVal );
+    }                                          //
                                                //
+    switch( level )                            //
+    {                                          //
       // ---------------------------------------------------
       // ignore this item, 
       // ---------------------------------------------------
@@ -770,6 +785,11 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
         moveMqiItem( mqiItem, anchor, event ); //
         break;                                 //
       }                                        //
+                                               //
+      // ---------------------------------------------------
+      // evaluate level already done, this case should not be reached
+      // ---------------------------------------------------
+      case MQEV_LEV_EVAL:                      //
                                                //
       // ---------------------------------------------------
       // level not available, unknown level
@@ -875,23 +895,34 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
     mqiItem = nextMqiItem;
 #endif
              
-    mqiItem = mqiItem->next ;
+    mqiItem = nextMqiItem;
   }
-  
+ 
+  // -------------------------------------------------------
+  // evaluate event level (search for highest level in item list)
+  // -------------------------------------------------------
+  evalEventLevel( event );
+
   // -------------------------------------------------------
   // there should be exact one MQIASY_COMMAND item in the bag
-  // evaluate it
+  // evaluate it and move the event list to a single or double events
   // -------------------------------------------------------
   switch( eventType )
   {
     // -----------------------------------------------------
     // queue manager event 
-    //   message went to DLQ, put event to single event list
-    //   QMGR was stopped / started, put event to QMGR list
+    //   case message went to DLQ      -> put event to single event list
+    //   case QMGR was stopped started -> put event to QMGR list
     // -----------------------------------------------------
     case MQCMD_Q_MGR_EVENT :                          //
     {                                                 //
       tmpItem=findMqiItem(event->item,MQIASY_REASON); // check the reason for
+      if( tmpItem == NULL )            //
+      {                                  //
+	logger(LEVN_EVENT_ITEM_NOT_EXIST,"MQIASY_REASON");
+        sysRc = -2;                  //
+	goto _door;                    //
+      }                              //
       switch( tmpItem->value.intVal )                 //   qmgr-event
       {                                               //
         case MQRC_Q_MGR_ACTIVE :                      // if start qmgr
@@ -918,12 +949,12 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
       }                                               //
       break;                                          // switch( eventType )
     }                                                 //
-                                  //
+                                                  //
     // -----------------------------------------------------
     // channel event
     // -----------------------------------------------------
-    case MQCMD_CHANNEL_EVENT:      //
-    {                        //
+    case MQCMD_CHANNEL_EVENT:        //
+    {                                //
       if( !(qmgrNode->qmgrEvent) )                //
       {                                               //
         qmgrNode->qmgrEvent = event;              //
@@ -931,10 +962,11 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
       }                                               //
       addEventNode( qmgrNode->qmgrEvent, event ); //
       break;                                          //
-    }                        //
-                                  //
+    }                              //
+                                              //
     // -----------------------------------------------------
-    // not a queue manager event or channel event
+    // not a queue manager event and 
+    // not a channel event
     // -----------------------------------------------------
     default :                                         //
     {                                                 //
