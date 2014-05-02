@@ -1,0 +1,14 @@
+<!ELEMENT event (selector,nmbr)+>
+<!ELEMENT selector (value)* >
+<!ATTLIST selector
+   id    CDATA         #REQUIRED
+   level ( MQEV_LEV_EVAL |
+           MQEV_LEV_IGN  |
+           MQEV_LEV_INF  |
+           MQEV_LEV_WAR  |
+           MQEV_LEV_ERR  |
+           MQEV_LEV_NA   ) "MQEV_LEV_NA"
+>
+<!ELEMENT value CDATA>
+<!ELEMENT nmbr CDATA>
+

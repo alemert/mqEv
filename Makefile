@@ -24,6 +24,7 @@ SOURCES = worker.c mqev.c node.c dumper.c process.c level.c
 LSOWN = mqutil msgcat inih sogen
 
 MQLIB = use
+XML2  = use
 
 # ------------------------------------------------------------------------------
 # main source

@@ -6,10 +6,12 @@
 /*    for each selector should be a error level                 */
 /*                                                                            */
 /*    functions:                                                              */
-/*      - getLevel                                                  */
-/*      - getValueLevel                                          */
-/*      - evalEventLevel                        */
-/*                                                                  */
+/*      - getLevel                                                            */
+/*      - getValueLevel                                                       */
+/*      - evalEventLevel                                          */
+/*      - getItemLevel                                */
+/*      - loadCfgEvent                        */
+/*                                                                            */
 /******************************************************************************/
 
 /******************************************************************************/
@@ -19,6 +21,14 @@
 // ---------------------------------------------------------
 // system
 // ---------------------------------------------------------
+
+// ---------------------------------------------------------
+// XML
+// ---------------------------------------------------------
+#include <libxml/tree.h>
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
 
 // ---------------------------------------------------------
 // mq
@@ -32,15 +42,18 @@
 // ---------------------------------------------------------
 #include <ctl.h>
 #include <msgcat/lgmqe.h>
+#include <inihnd.h>
 
 // ---------------------------------------------------------
 // local
 // ---------------------------------------------------------
 #include <node.h>
+#include <level.h>
 
 /******************************************************************************/
 /*   G L O B A L S                                                            */
 /******************************************************************************/
+tCfgSelector *_gCfgEvent = NULL ;
 
 /******************************************************************************/
 /*   D E F I N E S                                                            */
@@ -53,6 +66,7 @@
 /******************************************************************************/
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
+int loadCfgEvent( const char *evCfgFile ) ;
 
 /******************************************************************************/
 /*                                                                            */
@@ -220,10 +234,40 @@ tEvLevel evalEventLevel( tEvent *_event )
     item=item->next ; 
   }
 
-  _event->level = MQEV_LEV_NA ;
+  _event->level = level ;
 
   _door :
 
   return level ;
 }
 
+/******************************************************************************/
+/* get Selector Level          */
+/******************************************************************************/
+tEvLevel getItemLevel( tMqiItem *mqiItem )
+{
+
+  if( _gCfgEvent == NULL )
+  {
+    tIniNode *searchIni ;                          //
+    char* evCfgFile ;
+
+    searchIni = getIniNode("system","event");      // system.event node from ini
+    evCfgFile = getIniStrValue( searchIni,"file" );// get ini from node
+    loadCfgEvent( evCfgFile );
+  }
+}
+
+/******************************************************************************/
+/*  load config event (xml file)      */
+/******************************************************************************/
+int loadCfgEvent( const char *evCfgFile )
+{
+  xmlDocPtr doc;
+
+  xmlInitParser();  // init xml parser is not reentrant;
+                    //  adjust signal handler
+                    // should be call only once (must in multi-threads)
+
+  doc = xmlParseFile( evCfgFile );    // load XML file
+}

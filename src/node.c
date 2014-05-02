@@ -761,12 +761,12 @@ int item2event( tQmgrNode *qmgrNode, tMqiItem *anchor, PMQMD pmd )
 
     if( mqiItem->selector == MQIASY_COMMAND )  // find out to which list this
     {                                          //  item should be moved to
-      eventType = mqiItem->value.intVal;       //
+      eventType = mqiItem->value.intVal;       //  (single or double event)
     }                                          //
-                                               // get level to selector
-    level=getSelectorLevel(mqiItem->selector); // level of some selectors 
-    if( level == MQEV_LEV_EVAL )               //  depend on it's value
-    {                                          //
+                                               // get level for selector, level
+    level=getSelectorLevel(mqiItem->selector); //  of some selectors (with 
+    if( level == MQEV_LEV_EVAL )               //  integer-value) depend on 
+    {                                          //  it's value
       if( mqiItem->type != INTIGER_ITEM )      // converting is possible only 
       {                                        //  for integer items
 	logger( LEVN_EVENT_ITEM_TYPE_ERROR,    //

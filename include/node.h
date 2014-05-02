@@ -25,7 +25,7 @@
 // ---------------------------------------------------------
 // local
 // ---------------------------------------------------------
-#include <level.h>
+//#include <level.h>
 
 /******************************************************************************/
 /*   D E F I N E S                                                            */
@@ -135,8 +135,10 @@ void freeEventTree();
 // ---------------------------------------------------------
 // level.c
 // ---------------------------------------------------------
-tEvLevel getSelectorLevel( MQLONG selector );
-tEvLevel getValueLevel(    MQLONG value    );
-tEvLevel evalEventLevel(   tEvent *_event  );
+tEvLevel getSelectorLevel( MQLONG selector   );
+tEvLevel getValueLevel(    MQLONG value      );
+tEvLevel evalEventLevel(   tEvent *_event    );
+tEvLevel getItemLevel(     tMqiItem *mqiItem );
+int loadCfgEvent( const char *evCfgFile ) ;
 
 #endif

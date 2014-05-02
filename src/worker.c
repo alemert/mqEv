@@ -125,11 +125,23 @@ int htmlWorker()
 
   tIniNode *searchIni ;    // data structure for getting searching in ini files
   char     *wwwDir    ;    // directory for raw html data
+  char     *evCfgFile ;    // XML file name for the event level configuration
 
+  // -------------------------------------------------------
+  // initialize HTML worker
+  // -------------------------------------------------------
   searchIni = getIniNode( "system", "html" );  // system.html node from ini
   wwwDir = getIniStrValue( searchIni,"dir" );  // get file & level from node
   if( !wwwDir )                                // abort if html-interface 
   {                                            //  directory does not exist
+    sysRc = 1 ;                                //
+    goto _door;                                //
+  }                                            //
+                                               //
+  searchIni = getIniNode("system","event");    // system.event node from ini
+  evCfgFile = getIniStrValue(searchIni,"file");// get ini from node
+  if( loadCfgEvent( evCfgFile ) > 0 )          // load level for the events 
+  {                                            //  from XML file
     sysRc = 1 ;                                //
     goto _door;                                //
   }                                            //
