@@ -66,7 +66,6 @@ tCfgSelector *_gCfgEvent = NULL ;
 /******************************************************************************/
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
-int loadCfgEvent( const char *evCfgFile ) ;
 
 /******************************************************************************/
 /*                                                                            */
@@ -263,11 +262,50 @@ tEvLevel getItemLevel( tMqiItem *mqiItem )
 /******************************************************************************/
 int loadCfgEvent( const char *evCfgFile )
 {
+  int sysRc = 0 ;
   xmlDocPtr doc;
+  xmlXPathContextPtr xpathCtx;
+  xmlXPathObjectPtr  xpathSelectorObj;
+
+  xmlNodeSetPtr selectorNodeSet ;
+  xmlNodePtr selectorNode ;
+  int selectorNodeSize ;
+  int i;
 
   xmlInitParser();  // init xml parser is not reentrant;
                     //  adjust signal handler
                     // should be call only once (must in multi-threads)
 
-  doc = xmlParseFile( evCfgFile );    // load XML file
+  doc = xmlParseFile( evCfgFile );        // load XML file
+  if( doc == NULL )                       //
+  {                                       //
+    logger(LSTD_XML_FILE_ERR,evCfgFile);  //
+    sysRc = 1;                            //
+    goto _door ;                          //
+  }                                       //
+                                          //
+  xpathCtx = xmlXPathNewContext( doc );   // create xmlContext
+  if( xpathCtx = NULL )                   //
+  {                                       //
+    logger( LSTD_XML_CONTEXT_ERR );       //
+    sysRc = 2 ;                  //
+    goto _door ;                //
+  }                              //
+                  //
+  xpathSelectorObj=xmlXPathEvalExpression( (const xmlChar*) "//selector", 
+					    xpathCtx ) ;
+  
+  selectorNodeSet = xpathSelectorObj->nodesetval;
+  selectorNodeSize = (selectorNodeSet) ? selectorNodeSet->nodeNr : 0;
+  for(i=0;i<selectorNodeSize;i++)
+  {
+    selectorNode = selectorNodeSet->nodeTab[i] ;
+    //  hier geht es weiter mit analyse von einzelnen selectoren auf level ebene
+  }
+
+  _door:
+    if( doc     != NULL ) xmlFreeDoc(doc);
+    if(xpathCtx != NULL ) xmlXPathFreeContext( xpathCtx ); 
+
+    return sysRc ;
 }
