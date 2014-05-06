@@ -3,14 +3,15 @@
 /*                                                                            */
 /*  description:                                                              */
 /*    module for level handling;                                              */
-/*    for each selector should be a error level                 */
+/*    for each selector should be an error level                 */
 /*                                                                            */
 /*    functions:                                                              */
 /*      - getLevel                                                            */
 /*      - getValueLevel                                                       */
-/*      - evalEventLevel                                          */
-/*      - getItemLevel                                */
-/*      - loadCfgEvent                        */
+/*      - evalEventLevel                                                      */
+/*      - getItemLevel                                        */
+/*      - loadCfgEvent                                */
+/*      - addCfgEvent                          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -44,6 +45,7 @@
 #include <ctl.h>
 #include <msgcat/lgmqe.h>
 #include <inihnd.h>
+#include <mqtype.h>
 
 // ---------------------------------------------------------
 // local
@@ -67,6 +69,7 @@ tCfgSelector *_gCfgEvent = NULL ;
 /******************************************************************************/
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
+tCfgSelector* addCfgEvent( MQLONG selector );
 
 /******************************************************************************/
 /*                                                                            */
@@ -244,6 +247,7 @@ tEvLevel evalEventLevel( tEvent *_event )
 /******************************************************************************/
 /* get Selector Level          */
 /******************************************************************************/
+#if(0)
 tEvLevel getItemLevel( tMqiItem *mqiItem )
 {
 
@@ -257,9 +261,10 @@ tEvLevel getItemLevel( tMqiItem *mqiItem )
     loadCfgEvent( evCfgFile );
   }
 }
+#endif
 
 /******************************************************************************/
-/*  load config event (xml file)            */
+/*  load config event (xml file)                  */
 /******************************************************************************/
 int loadCfgEvent( const char *evCfgFile )
 {
@@ -284,44 +289,62 @@ int loadCfgEvent( const char *evCfgFile )
   doc = xmlParseFile( evCfgFile );              // load XML file
   if( doc == NULL )                             //
   {                                             //
-    logger(LSTD_XML_FILE_ERR,evCfgFile);    //
-    sysRc = 1;                                //
-    goto _door ;                              //
+    logger(LSTD_XML_FILE_ERR,evCfgFile);        //
+    sysRc = 1;                                  //
+    goto _door ;                                //
   }                                             //
                                                 //
-  xpathCtx = xmlXPathNewContext( doc );     // create xmlContext
-  if( xpathCtx == NULL )                      //
+  xpathCtx = xmlXPathNewContext( doc );         // create xmlContext
+  if( xpathCtx == NULL )                        //
   {                                             //
-    logger( LSTD_XML_CTX_ERR, evCfgFile );  //
+    logger( LSTD_XML_CTX_ERR, evCfgFile );      //
     sysRc = 2 ;                                 //
     goto _door ;                                //
   }                                             //
                                                 //
-  xpathSelectorObj = xmlXPathEvalExpression( (const xmlChar*) "//selector", 
-                                              xpathCtx ) ;
-  if( !xpathSelectorObj )               //
-  {                                            //
-    logger( LSTD_XML_XPATH_ERR, "//selector" );
-    sysRc = 2 ;                    //
-    goto _door ;                   //
-  }                                //
-                                            //
-  selectorNodeSet = xpathSelectorObj->nodesetval;
+  xpathSelectorObj = xmlXPathEvalExpression(    // search for /event/selector
+                       (const xmlChar*)  "/event//selector", 
+                       xpathCtx             );  //
+  if( !xpathSelectorObj )                       // /event//selector not found
+  {                                             //
+    logger( LSTD_XML_XPATH_ERR, "//selector" ); //
+    sysRc = 2 ;                                 //
+    goto _door ;                                //
+  }                                             //
+                                                //
+  // -------------------------------------------------------
+  // go through all selectors
+  // -------------------------------------------------------
+  selectorNodeSet=xpathSelectorObj->nodesetval; //
   selectorNodeSize = (selectorNodeSet) ? selectorNodeSet->nodeNr : 0;
-  for(i=0;i<selectorNodeSize;i++)
-  {
-    selectorNode = selectorNodeSet->nodeTab[i] ;
-    if( selectorNode->type != XML_ELEMENT_NODE)  continue ;
-    if( strcmp( (char*) selectorNode->name, "selector" ) != 0 ) continue ;
-
-    if( selectorNode->properties->type != XML_ATTRIBUTE_NODE ) continue ;
-    if( selectorNode->properties->children->type == XML_TEXT_NODE ) continue ;
-    if( strcmp( selectorNode->properties->name, "id" ) != 0 ) continue ;
-   
-    selector = str2mqSelector( selectorNode->properties->children->content  );
+  for(i=0;i<selectorNodeSize;i++)      //
+  {                                             //
+    selectorNode = selectorNodeSet->nodeTab[i]; //
+    if( selectorNode->type!=XML_ELEMENT_NODE )  //
+      continue ;                                //
+    if( strcmp((char*)selectorNode->name,"selector")!=0 ) 
+      continue ;                                //
+                                                //
+    if( selectorNode->properties->type!=XML_ATTRIBUTE_NODE ) 
+      continue ;                              //
+    if( selectorNode->properties->children->type == XML_TEXT_NODE ) 
+      continue ;                          //
+    if( strcmp( (char*) selectorNode->properties->name,"id")!=0 ) 
+      continue ;                          //
+                                               //
+    selector = str2mqSelector(
+	         (char*) selectorNode->properties->children->content );
+    if( selector == MQ_UNKNOWN_SELECTOR )       //
+    {                                    //
+      logger( LEVN_XML_UNKNWOWN_SELECTOR,       //
+              selectorNode->properties->children->content, 
+              evCfgFile );              //
+      sysRc = 3 ;                      //
+      goto _door;            //
+    }                        //
     printf("%s\n", selectorNode->properties->children->content );
 
-    createCfgEvent( selector ) ;
+    addCfgEvent( selector ) ;
     //  hier geht es weiter mit analyse von einzelnen selectoren auf level ebene
   }
   _door:
@@ -329,4 +352,71 @@ int loadCfgEvent( const char *evCfgFile )
     if(xpathCtx != NULL ) xmlXPathFreeContext( xpathCtx ); 
 
     return sysRc ;
+}
+
+
+/******************************************************************************/
+/*  add event to configuration tree            */
+/*                                              */
+/*  description:                                */
+/*    add event configuration node to the sorted list               */
+/******************************************************************************/
+tCfgSelector* addCfgEvent( MQLONG selector )
+{
+  tCfgSelector *cfgEvNode = NULL ;
+  tCfgSelector *myEvNode = NULL ;
+
+  // -------------------------------------------------------
+  // allocate new event configuration node
+  // -------------------------------------------------------
+  cfgEvNode = (tCfgSelector*) malloc( sizeof(tCfgSelector) );
+  if( !cfgEvNode )
+  {
+    logger( LSTD_MEM_ALLOC_ERROR );
+    goto _door;
+  }
+
+  // -------------------------------------------------------
+  // initialize node
+  // -------------------------------------------------------
+  cfgEvNode->selector = selector;
+  cfgEvNode->level    = MQEV_LEV_EVAL ;
+  cfgEvNode->reason   = NULL ;
+  cfgEvNode->next     = NULL ;
+
+  // -------------------------------------------------------
+  // add node to the sorted list of nodes
+  // -------------------------------------------------------
+  if( !_gCfgEvent )                            // solve NULL pointer exception
+  {                                            // in case of empty list
+    _gCfgEvent = cfgEvNode;                    //
+  }                                            //
+  else if ( _gCfgEvent->selector > selector )  // if new node selector is
+  {                                            //  smaller then the 
+    cfgEvNode->next = _gCfgEvent->next;        //  (old) first one
+    _gCfgEvent = cfgEvNode;                    //
+  }                                            //
+  else                                         // search for the place 
+  {                                            //  where new node should be
+    myEvNode = _gCfgEvent;                     // inserted to
+    while( 1 )                                 //
+    {                                          //
+      if( !myEvNode->next )                    // the new node is the largest,
+      {                                        // put it to the end of the list
+        myEvNode->next = cfgEvNode;            //
+        break;                                 //
+      }                                        //
+      if( myEvNode->next->selector>selector )  // put new node in front of
+      {                                        //  the first node larger then
+        cfgEvNode->next = myEvNode->next ;     //  the new one
+        myEvNode->next = cfgEvNode;            //
+        break;                                 //
+      }                                        //
+      myEvNode = myEvNode->next;               //
+    }                                          //
+  }                                            //
+  
+
+  _door:
+    return cfgEvNode ;
 }

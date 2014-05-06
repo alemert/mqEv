@@ -18,7 +18,6 @@
         <df name="info">
         </df>
         <df name="ini">
-          <in>event.test</in>
         </df>
         <df name="ver">
         </df>
@@ -345,7 +344,6 @@
             <in>dumper.rev</in>
             <in>level.rev</in>
             <in>main.rev</in>
-            <in>mqev.rev</in>
             <in>node.rev</in>
             <in>process.rev</in>
             <in>ver4bin.c</in>
