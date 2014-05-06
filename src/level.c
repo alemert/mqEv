@@ -327,7 +327,7 @@ int loadCfgEvent( const char *evCfgFile )
                                                 //
     if( selectorNode->properties->type!=XML_ATTRIBUTE_NODE ) 
       continue ;                              //
-    if( selectorNode->properties->children->type == XML_TEXT_NODE ) 
+    if( selectorNode->properties->children->type != XML_TEXT_NODE ) 
       continue ;                          //
     if( strcmp( (char*) selectorNode->properties->name,"id")!=0 ) 
       continue ;                          //
@@ -393,7 +393,7 @@ tCfgSelector* addCfgEvent( MQLONG selector )
   }                                            //
   else if ( _gCfgEvent->selector > selector )  // if new node selector is
   {                                            //  smaller then the 
-    cfgEvNode->next = _gCfgEvent->next;        //  (old) first one
+    cfgEvNode->next = _gCfgEvent;              //  (old) first one
     _gCfgEvent = cfgEvNode;                    //
   }                                            //
   else                                         // search for the place 
@@ -406,7 +406,7 @@ tCfgSelector* addCfgEvent( MQLONG selector )
         myEvNode->next = cfgEvNode;            //
         break;                                 //
       }                                        //
-      if( myEvNode->next->selector>selector )  // put new node in front of
+      if( myEvNode->next->selector > selector) // put new node in front of
       {                                        //  the first node larger then
         cfgEvNode->next = myEvNode->next ;     //  the new one
         myEvNode->next = cfgEvNode;            //
