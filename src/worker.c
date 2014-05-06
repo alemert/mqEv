@@ -139,7 +139,12 @@ int htmlWorker()
   }                                            //
                                                //
   searchIni = getIniNode("system","event");    // system.event node from ini
-  evCfgFile = getIniStrValue(searchIni,"file");// get ini from node
+  evCfgFile = getIniStrValue(searchIni,"ini"); // get ini from node
+  if( !evCfgFile )
+  {                                            // event config file not
+    sysRc = 1 ;                                //  found in ini file
+    goto _door;                                //
+  }                                            //
   if( loadCfgEvent( evCfgFile ) > 0 )          // load level for the events 
   {                                            //  from XML file
     sysRc = 1 ;                                //

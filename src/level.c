@@ -21,6 +21,7 @@
 // ---------------------------------------------------------
 // system
 // ---------------------------------------------------------
+#include <string.h>
 
 // ---------------------------------------------------------
 // XML
@@ -252,57 +253,77 @@ tEvLevel getItemLevel( tMqiItem *mqiItem )
     char* evCfgFile ;
 
     searchIni = getIniNode("system","event");      // system.event node from ini
-    evCfgFile = getIniStrValue( searchIni,"file" );// get ini from node
+    evCfgFile = getIniStrValue( searchIni,"ini" );// get ini from node
     loadCfgEvent( evCfgFile );
   }
 }
 
 /******************************************************************************/
-/*  load config event (xml file)      */
+/*  load config event (xml file)            */
 /******************************************************************************/
 int loadCfgEvent( const char *evCfgFile )
 {
   int sysRc = 0 ;
-  xmlDocPtr doc;
-  xmlXPathContextPtr xpathCtx;
-  xmlXPathObjectPtr  xpathSelectorObj;
 
-  xmlNodeSetPtr selectorNodeSet ;
-  xmlNodePtr selectorNode ;
+  xmlDocPtr doc;
+  xmlXPathContextPtr xpathCtx = NULL ;
+  xmlXPathObjectPtr  xpathSelectorObj = NULL ;
+
+  xmlNodeSetPtr selectorNodeSet  = NULL ;
+  xmlNodePtr selectorNode  = NULL ;
   int selectorNodeSize ;
+
+  MQLONG selector ;
+
   int i;
 
-  xmlInitParser();  // init xml parser is not reentrant;
-                    //  adjust signal handler
-                    // should be call only once (must in multi-threads)
-
-  doc = xmlParseFile( evCfgFile );        // load XML file
-  if( doc == NULL )                       //
-  {                                       //
-    logger(LSTD_XML_FILE_ERR,evCfgFile);  //
-    sysRc = 1;                            //
-    goto _door ;                          //
-  }                                       //
-                                          //
-  xpathCtx = xmlXPathNewContext( doc );   // create xmlContext
-  if( xpathCtx = NULL )                   //
-  {                                       //
-    logger( LSTD_XML_CONTEXT_ERR );       //
-    sysRc = 2 ;                  //
-    goto _door ;                //
-  }                              //
-                  //
-  xpathSelectorObj=xmlXPathEvalExpression( (const xmlChar*) "//selector", 
-					    xpathCtx ) ;
-  
+  xmlInitParser();        // initialize XML parser is not reentrant;
+                          //   therefor signal handler should be adjusted
+                          // should be called only once (must in multi-threads)
+                          //
+  doc = xmlParseFile( evCfgFile );              // load XML file
+  if( doc == NULL )                             //
+  {                                             //
+    logger(LSTD_XML_FILE_ERR,evCfgFile);    //
+    sysRc = 1;                                //
+    goto _door ;                              //
+  }                                             //
+                                                //
+  xpathCtx = xmlXPathNewContext( doc );     // create xmlContext
+  if( xpathCtx == NULL )                      //
+  {                                             //
+    logger( LSTD_XML_CTX_ERR, evCfgFile );  //
+    sysRc = 2 ;                                 //
+    goto _door ;                                //
+  }                                             //
+                                                //
+  xpathSelectorObj = xmlXPathEvalExpression( (const xmlChar*) "//selector", 
+                                              xpathCtx ) ;
+  if( !xpathSelectorObj )               //
+  {                                            //
+    logger( LSTD_XML_XPATH_ERR, "//selector" );
+    sysRc = 2 ;                    //
+    goto _door ;                   //
+  }                                //
+                                            //
   selectorNodeSet = xpathSelectorObj->nodesetval;
   selectorNodeSize = (selectorNodeSet) ? selectorNodeSet->nodeNr : 0;
   for(i=0;i<selectorNodeSize;i++)
   {
     selectorNode = selectorNodeSet->nodeTab[i] ;
+    if( selectorNode->type != XML_ELEMENT_NODE)  continue ;
+    if( strcmp( (char*) selectorNode->name, "selector" ) != 0 ) continue ;
+
+    if( selectorNode->properties->type != XML_ATTRIBUTE_NODE ) continue ;
+    if( selectorNode->properties->children->type == XML_TEXT_NODE ) continue ;
+    if( strcmp( selectorNode->properties->name, "id" ) != 0 ) continue ;
+   
+    selector = str2mqSelector( selectorNode->properties->children->content  );
+    printf("%s\n", selectorNode->properties->children->content );
+
+    createCfgEvent( selector ) ;
     //  hier geht es weiter mit analyse von einzelnen selectoren auf level ebene
   }
-
   _door:
     if( doc     != NULL ) xmlFreeDoc(doc);
     if(xpathCtx != NULL ) xmlXPathFreeContext( xpathCtx ); 
