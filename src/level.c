@@ -9,9 +9,10 @@
 /*      - getLevel                                                            */
 /*      - getValueLevel                                                       */
 /*      - evalEventLevel                                                      */
-/*      - getItemLevel                                        */
-/*      - loadCfgEvent                                */
-/*      - addCfgEvent                          */
+/*      - getItemLevel                                                    */
+/*      - loadCfgEvent                                        */
+/*      - addCfgEvent                                  */
+/*      - str2level                          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -70,6 +71,7 @@ tCfgSelector *_gCfgEvent = NULL ;
 /*   P R O T O T Y P E S                                                      */
 /******************************************************************************/
 tCfgSelector* addCfgEvent( MQLONG selector );
+tEvLevel str2level( const char* str );
 
 /******************************************************************************/
 /*                                                                            */
@@ -274,11 +276,18 @@ int loadCfgEvent( const char *evCfgFile )
   xmlXPathContextPtr xpathCtx = NULL ;
   xmlXPathObjectPtr  xpathSelectorObj = NULL ;
 
-  xmlNodeSetPtr selectorNodeSet  = NULL ;
-  xmlNodePtr selectorNode  = NULL ;
-  int selectorNodeSize ;
+  xmlNodeSetPtr selectorNodeSet = NULL;
+  xmlNodePtr    selectorNode    = NULL;
+  int           selectorNodeSize;
+
+  xmlNodeSetPtr monitorNodeSet = NULL;
+  xmlNodePtr    monitorNode    = NULL;
+  int           monitorNodeSize;
 
   MQLONG selector ;
+
+  tCfgSelector *cfgEvNode = NULL ;
+  tEvLevel level;
 
   int i;
 
@@ -326,25 +335,104 @@ int loadCfgEvent( const char *evCfgFile )
       continue ;                                //
                                                 //
     if( selectorNode->properties->type!=XML_ATTRIBUTE_NODE ) 
-      continue ;                              //
+      continue ;                                //
     if( selectorNode->properties->children->type != XML_TEXT_NODE ) 
-      continue ;                          //
+      continue ;                                //
     if( strcmp( (char*) selectorNode->properties->name,"id")!=0 ) 
-      continue ;                          //
-                                               //
+      continue ;                                //
+                                                //
     selector = str2mqSelector(
 	         (char*) selectorNode->properties->children->content );
     if( selector == MQ_UNKNOWN_SELECTOR )       //
-    {                                    //
+    {                                           //
       logger( LEVN_XML_UNKNWOWN_SELECTOR,       //
               selectorNode->properties->children->content, 
-              evCfgFile );              //
-      sysRc = 3 ;                      //
-      goto _door;            //
-    }                        //
+              evCfgFile );                      //
+      sysRc = 3 ;                               //
+      goto _door;                               //
+    }                                           //
     printf("%s\n", selectorNode->properties->children->content );
+                                                //
+    cfgEvNode = addCfgEvent( selector );        // create new event 
+    if( !cfgEvNode )                            //  configuration node and 
+    {                                           //  insert it into a sorted 
+      sysRc = 4 ;                               //  global list at the right
+      goto _door;                               //  position
+    }                                           //
+                                                //
+    // -----------------------------------------------------
+    // check for monitor node
+    // -----------------------------------------------------
+    if( !selectorNode->children )               // use default level if 
+    {                                           //  selector node has no
+      cfgEvNode->level = MQEV_LEV_EVAL;         //  children 
+      continue;                                 //
+    }                                           //
+                                                //
+    funktion get level from children node has to be written, move code beyond to the function
+    monitorNode = selectorNode->children;       // get children node
+    if( !monitorNode )                          // (for readable code)
+    {                                           //
+      cfgEvNode->level = MQEV_LEV_EVAL;         //
+    }                                           //
+                                                //
+    while( monitorNode )                        // go through all children nodes
+    {                                           //  search for monitor nodes
+      if( monitorNode->type!=XML_ELEMENT_NODE ) //
+      {                                         // ignore useless XML_TEXT_NODE
+	monitorNode = monitorNode->next;        //
+	continue;                               //
+      }                                         //
+      if( strcmp( monitorNode->name,            // ignore all nodes but monitor
+                  "monitor" ) != 0 )            //  there could be reason nodes
+      {                                         //  as well
+	monitorNode = monitorNode->next;        //
+	continue;                               //
+      }                                         //
+      if( !monitorNode->properties )            // technical condition for
+      {                                         //  avoiding NULL pointer
+	monitorNode = monitorNode->next;        //  exception
+        continue;                               //
+      }                                         //
+      if( monitorNode->properties->type !=      // avoid XML_TEXT_NONDE
+          XML_ATTRIBUTE_NODE )                  //
+      {                                         //
+	monitorNode = monitorNode->next;        //
+	continue;                               //
+      }                                         //
+      if( strcmp( monitorNode->properties->name,// ignore all attributes 
+		  "level") != 0 )               //  except level
+      {                                         //
+	monitorNode = monitorNode->next;        //
+	continue;                               //
+      }                                         //
+      if( !monitorNode->properties->children )  // technical condition for
+      {                                         //  avoiding NULL pointer
+	monitorNode = monitorNode->next;        //  exception
+	continue;                               //
+      }                                         //
+      if( monitorNode->properties->children->type != 
+          XML_TEXT_NODE )              // technical condition for
+      {                                         //  avoiding NULL pointer
+	monitorNode = monitorNode->next;        //  exception
+	continue;                               //
+      }                                         //
+      if( !monitorNode->properties->children->content )
+      {                                         // technical condition for
+	monitorNode = monitorNode->next;        //  avoiding NULL pointer
+	continue;                               //  exception
+      }                                         //
+                                                //
+      level = str2level( monitorNode->properties->children->content );
+      if( level == MQEV_LEV_NA )            //
+      {                                //
+	sysRc = 5;                    //
+        goto _door;                  //
+      }                  //
+    }                                  //
+    cfgEvNode->level = level;            //
+            //
 
-    addCfgEvent( selector ) ;
     //  hier geht es weiter mit analyse von einzelnen selectoren auf level ebene
   }
   _door:
@@ -419,4 +507,22 @@ tCfgSelector* addCfgEvent( MQLONG selector )
 
   _door:
     return cfgEvNode ;
+}
+
+/******************************************************************************/
+/*   str2level            */
+/******************************************************************************/
+tEvLevel str2level( const char* str )
+{
+  tEvLevel sysRc = MQEV_LEV_NA ;
+
+  if( strcmp( str,"MQEV_LEV_EVAL") =! 0 ) { sysRc = MQEV_LEV_EVAL; goto _door; }
+  if( strcmp( str,"MQEV_LEV_IGN" ) =! 0 ) { sysRc = MQEV_LEV_IGN ; goto _door; }
+  if( strcmp( str,"MQEV_LEV_INF" ) =! 0 ) { sysRc = MQEV_LEV_INF ; goto _door; }
+  if( strcmp( str,"MQEV_LEV_WAR" ) =! 0 ) { sysRc = MQEV_LEV_WAR ; goto _door; }
+  if( strcmp( str,"MQEV_LEV_ERR" ) =! 0 ) { sysRc = MQEV_LEV_ERR ; goto _door; }
+  if( strcmp( str,"MQEV_LEV_NA"  ) =! 0 ) { sysRc = MQEV_LEV_NA  ; goto _door; }
+
+  _door:
+    return sysRc;
 }
